@@ -1,9 +1,11 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TrendingUp, PieChart } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import type { BudgetCategory, Transaction } from "@/lib/supabase"
+import type { Transaction } from "@/app/actions/expenses"
+import { getTransactions } from "@/app/actions/expenses"
 
 interface BudgetItem {
   category: string
@@ -12,51 +14,116 @@ interface BudgetItem {
 }
 
 interface ExpenseHistoryChartProps {
-  expenseHistory: Array<{
-    date: string
-    spent: number
-  }>
+  expenseHistory: Array<{ date: string; spent: number }>
   budgetData: BudgetItem[]
+  monthName: string
+}
+
+function getExpensesByCategory(
+  transactions: Transaction[],
+  month?: number,
+  year?: number
+) {
+  return transactions
+    .filter((t) => t.amount < 0) // uniquement les dépenses
+    .filter((t) => {
+      if (month === undefined || year === undefined) return true
+      const d = new Date(t.transaction_date)
+      return d.getMonth() === month && d.getFullYear() === year
+    })
+    .reduce((acc, t) => {
+      const category = t.budget_categories?.name ?? "Autres"
+      const existing = acc.find((c) => c.category === category)
+      if (existing) {
+        existing.total += Math.abs(t.amount)
+      } else {
+        acc.push({ category, total: Math.abs(t.amount) })
+      }
+      return acc
+    }, [] as { category: string; total: number }[])
 }
 
 export function ExpenseHistoryChart({
   expenseHistory = [],
   budgetData = [],
+  monthName,
 }: ExpenseHistoryChartProps) {
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+
+  // Charger les transactions depuis Supabase
+  useEffect(() => {
+    getTransactions().then((res) => {
+      if (res.data) setTransactions(res.data)
+    })
+  }, [])
+
+  const now = new Date()
+  const expensesByCategory = getExpensesByCategory(
+    transactions,
+    now.getMonth(),
+    now.getFullYear()
+  )
+  const expenseHistoryWithCumulative = expenseHistory
+  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  .map((item, index, arr) => {
+    const cumulativeSpent = arr
+      .slice(0, index + 1)
+      .reduce((sum, t) => sum + t.spent, 0)
+    return { ...item, cumulativeSpent }
+  })
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Courbe des dépenses */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold flex items-center">
             <TrendingUp className="h-5 w-5 mr-2" />
-            Historique des dépenses -
+            {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={expenseHistory} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
-                <XAxis dataKey="date" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip 
-                  formatter={(value: number) => `${value.toLocaleString("fr-FR")} €`} 
-                  contentStyle={{ backgroundColor: "white", borderRadius: "8px", border: "none", boxShadow: "0 2px 5px rgba(0,0,0,0.1)" }}
+              <LineChart data={expenseHistoryWithCumulative} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
+                <XAxis dataKey="date" axisLine={true} tickLine={false} />
+                <YAxis axisLine={true} tickLine={false} />
+                <Tooltip
+                  formatter={(value: number) => `${value.toLocaleString("fr-FR")} €`}
+                  contentStyle={{
+                    backgroundColor: "white",
+                    borderRadius: "8px",
+                    border: "none",
+                    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                  }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="spent" 
-                  stroke="#0088ff" 
+                {/* Dépenses journalières */}
+                <Line
+                  type="monotone"
+                  dataKey="spent"
+                  name="Montant journalier"
+                  stroke="#0088ff"
                   strokeWidth={3}
-                  strokeLinecap="round" // ← makes line ends rounded
-                  dot={false} 
-                  activeDot={{ r: 4 }} 
+                  strokeLinecap="round"
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+                {/* Dépenses cumulées */}
+                <Line
+                  type="monotone"
+                  dataKey="cumulativeSpent"
+                  name="Cumulé"
+                  stroke="#ff5500"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
-      {/* Budget vs Expenses */}
+
+      {/* Budget vs Dépenses */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold flex items-center">
@@ -67,14 +134,16 @@ export function ExpenseHistoryChart({
         <CardContent>
           <div className="h-[300px] w-full">
             <div className="space-y-4">
-              {(budgetData || []).slice(0, 5).map((item, index) => {
-                const percentage = item.budget > 0 ? (item.spent / item.budget) * 100 : 0
+              {budgetData.slice(0, 5).map((item, index) => {
+                const categoryExpense = expensesByCategory.find(e => e.category === item.category)
+                const spent = categoryExpense?.total ?? 0
+                const percentage = item.budget > 0 ? (spent / item.budget) * 100 : 0
                 return (
                   <div key={index} className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="font-medium">{item.category}</span>
                       <span className="text-gray-500">
-                        {item.spent.toLocaleString("fr-FR")} / {item.budget.toLocaleString("fr-FR")} €
+                        {spent.toLocaleString("fr-FR")} / {item.budget.toLocaleString("fr-FR")} €
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">

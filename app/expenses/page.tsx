@@ -24,6 +24,7 @@ import { getAccounts } from "@/app/actions/accounts"
 import { getBudgetCategories } from "@/app/actions/budget"
 
 
+
 export default async function Expenses() {
   const [transactionsResult, accountsResult, categoriesResult] = await Promise.all([
     getTransactions(),
@@ -50,9 +51,9 @@ export default async function Expenses() {
     }
     return colors[category] || "bg-gray-100 text-gray-800"
   }
-
-  const getTransactionIcon = (category: string) => {
-    switch (category?.toLowerCase()) {
+  
+    const getTransactionIcon = (category: string) => {
+    switch (category.toLowerCase()) {
       case "alimentation":
         return ShoppingCart
       case "transport":
@@ -67,7 +68,7 @@ export default async function Expenses() {
         return CreditCard
     }
   }
-
+  
 
   async function handleDeleteTransaction(id: string) {
     "use server"
@@ -153,7 +154,7 @@ export default async function Expenses() {
           <CardContent className="p-0">
             <div className="space-y-0">
               {transactions.map((transaction) => {
-                const IconComponent = getTransactionIcon(transaction.budget_categories?.name)
+                const IconComponent = getTransactionIcon(transaction.budget_categories?.name || "Non catégorisé")
                 return (
                   <div
                     key={transaction.id}

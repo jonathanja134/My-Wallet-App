@@ -2,8 +2,33 @@
 
 import { supabase } from "@/lib/supabase"
 import { revalidatePath } from "next/cache"
+import { Transaction } from "@/app/types/transaction"
 
 const USER_ID = "550e8400-e29b-41d4-a716-446655440000" // Demo user ID
+
+export async function searchTransactions(query: string): Promise<Transaction[]> {
+  const all = await getTransactions() // récupère toutes les transactions
+  return all.data?.filter(t =>
+    t.description.toLowerCase().includes(query.toLowerCase())
+  ) || []
+}
+
+export async function getTransactions(): Promise<{ data?: Transaction[]; error?: string }> {
+  const { data, error } = await supabase
+    .from("transactions")
+    .select(`
+      *,
+      accounts(id, name),
+      budget_categories(id, name)
+    `)
+    .eq("user_id", USER_ID)
+    .order("transaction_date", { ascending: false })
+    .limit(50)
+
+  if (error) return { error: error.message }
+
+  return { data }
+}
 
 export async function createTransaction(formData: FormData) {
   const description = formData.get("description") as string
@@ -32,12 +57,14 @@ export async function createTransaction(formData: FormData) {
     ])
     .select()
 
-  if (error) {
-    return { error: error.message }
-  }
+  if (error) return { error: error.message }
 
   // Update account balance
-  const { data: account } = await supabase.from("accounts").select("balance").eq("id", account_id).single()
+  const { data: account } = await supabase
+    .from("accounts")
+    .select("balance")
+    .eq("id", account_id)
+    .single()
 
   if (account) {
     const newBalance = account.balance + amount
@@ -63,34 +90,13 @@ export async function createTransaction(formData: FormData) {
   return { success: true, data }
 }
 
-const DEFAULT_ACCOUNT_ID = "7d4a135c-cd9c-4ad3-b708-81c572c4bb22"
-
-export async function getTransactions() {
-  const { data, error } = await supabase
-    .from("transactions")
-    .select(`
-      *,
-      budget_categories(name, color)
-    `)
-    .eq("user_id", USER_ID)
-    .order("transaction_date", { ascending: false })
-    .limit(50)
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  const safeData = data.map((tx) => ({
-    ...tx,
-    account_id: tx.account_id ?? DEFAULT_ACCOUNT_ID,
-  }))
-
-  return { data: safeData }
-}
-
 export async function deleteTransaction(id: string) {
   // Get transaction details first
-  const { data: transaction } = await supabase.from("transactions").select("amount, account_id").eq("id", id).single()
+  const { data: transaction } = await supabase
+    .from("transactions")
+    .select("amount, account_id")
+    .eq("id", id)
+    .single()
 
   if (transaction) {
     // Update account balance (reverse the transaction)
@@ -112,11 +118,13 @@ export async function deleteTransaction(id: string) {
     }
   }
 
-  const { error } = await supabase.from("transactions").delete().eq("id", id).eq("user_id", USER_ID)
+  const { error } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", USER_ID)
 
-  if (error) {
-    return { error: error.message }
-  }
+  if (error) return { error: error.message }
 
   revalidatePath("/expenses")
   revalidatePath("/")

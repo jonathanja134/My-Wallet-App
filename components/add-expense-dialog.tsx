@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Plus } from "lucide-react"
 import { createTransaction } from "@/app/actions/expenses"
 import type { Account, BudgetCategory } from "@/lib/supabase"
+import { getTransactions } from "@/app/actions/expenses"
 
 interface AddExpenseDialogProps {
   accounts: Account[]

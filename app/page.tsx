@@ -21,6 +21,9 @@ import { getTransactions } from "@/app/actions/expenses"
 import { getBudgetCategories } from "@/app/actions/budget"
 import { ExpenseHistoryChart } from "@/components/financial-charts"
 import { getTotalExpenses, getTotalIncome,getTotalBudget } from "@/lib/utils"
+import { ThemeProvider } from "next-themes"
+import { formatCurrency } from "@/lib/utils"
+
 
 
 export default async function Dashboard() {
@@ -29,11 +32,13 @@ export default async function Dashboard() {
     getTransactions(),
     getBudgetCategories(),
   ])
-
+  const now = new Date()
+const currentMonth = now.getMonth() 
+const currentYear = now.getFullYear()
   const accounts = accountsResult.data || []
   const transactions = transactionsResult.data || []
   const budgetCategories = budgetResult.data || []
-  const totalExpenses = getTotalExpenses(transactions)
+  const totalExpenses = getTotalExpenses(transactions, now.getMonth(), now.getFullYear())
   const totalIncome = getTotalIncome(transactions)
   const totalBudget = getTotalBudget(budgetCategories)
 
@@ -45,8 +50,10 @@ export default async function Dashboard() {
     description: transaction.description,
     amount: transaction.amount,
     category: transaction.budget_categories?.name || "Non catégorisé",
-    date: new Date(transaction.transaction_date).toLocaleDateString("fr-FR"),
+    date: new Date(transaction.transaction_date),
   }))
+
+  
 
   const getAccountIcon = (type: string) => {
     switch (type.toLowerCase()) {
@@ -67,28 +74,71 @@ export default async function Dashboard() {
     }
   }
 
-// Get month name for the card title
-const monthName = transactions[0]
-  ? new Date(transactions[0].transaction_date).toLocaleString("fr-FR", { month: "long" })
-  : "Mois"
+  const monthsOrder = [
+  "janvier","février","mars","avril","mai","juin",
+  "juillet","août","septembre","octobre","novembre","décembre"
+];
 
-// Group expenses by day
-const expenseHistory = transactions
+const sortedMonthlyExpenses = Array.from(groupTransactionsByMonth(transactions))
+  .sort((a, b) => monthsOrder.indexOf(a[0]) - monthsOrder.indexOf(b[0]));
+
+  type Transaction = {
+  id: string
+  amount: number
+  transaction_date: string
+  category_id?: string
+  budget_categories?: { name: string }
+  accounts?: { name: string }
+  description: string
+}
+
+function groupTransactionsByMonth(transactions: Transaction[]) {
+  const map = new Map<string, number>()
+
+  transactions
+    .filter((t) => {return t.amount < 0})
+    .forEach(t => {
+      const date = new Date(t.transaction_date)
+      const monthNamesFR = [
+      "janvier", "février", "mars", "avril", "mai", "juin",
+      "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+      ];
+      const monthName = monthNamesFR[date.getMonth()];      
+      const current = map.get(monthName) || 0
+      map.set(monthName, current + Math.abs(t.amount))
+    })
+
+  return map
+}
+
+// Get month name for the card title
+const monthName =
+  transactions.length > 0
+    ? new Date(transactions[0].transaction_date).toLocaleString("fr-FR", { month: "long" })
+    : "Mois"
+
+
+const filteredTransactions = transactions.filter((t) => {
+  const date = new Date(t.transaction_date)
+  return date.getMonth() === currentMonth && date.getFullYear() === currentYear
+})
+
+// Group expenses by day uniquement sur les transactions du mois courant
+const expenseHistory = filteredTransactions
   .filter((t) => t.amount < 0)
   .reduce((acc, t) => {
-    const dateObj = new Date(t.transaction_date)
-    const day = dateObj.getDate()
-    const dateStr = day.toString() // keep `date` as string for TypeScript
+    const day = new Date(t.transaction_date).getDate()
+    const dateStr = day.toString()
+    const existing = acc.find((e) => e.date === dateStr)
 
-    const existing = acc.find((e:any) => e.date === dateStr)
     if (existing) {
       existing.spent += Math.abs(t.amount)
     } else {
       acc.push({ date: dateStr, spent: Math.abs(t.amount) })
     }
-
     return acc
   }, [] as { date: string; spent: number }[])
+  .sort((a, b) => Number(a.date) - Number(b.date))
 
 // Sort days in ascending order
 expenseHistory.sort((a:any, b:any) => Number(a.date) - Number(b.date))
@@ -103,7 +153,8 @@ const budgetData = budgetCategories.map((cat) => ({
 }))
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <div className="min-h-screen bg-gray-50 bg-background text-foreground">
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -150,7 +201,7 @@ const budgetData = budgetCategories.map((cat) => ({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Depense mensuel / Objectif</p>
-                  <p className="text-3xl font-bold text-gray-900">{totalExpenses.toLocaleString("fr-FR")} € / {totalBudget.toLocaleString("fr-FR")}  </p>
+                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(totalExpenses)} € / {formatCurrency(totalBudget)}  </p>
                   <div className="flex items-center mt-2">
                     {monthlyChange > 0 ? (
                       <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
@@ -174,46 +225,12 @@ const budgetData = budgetCategories.map((cat) => ({
             </CardContent>
           </Card>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Accounts Overview */}
-          <div className="lg:col-span-2">
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold">Mes comptes</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="space-y-0">
-                  {accounts.map((account, index) => (
-                    <div
-                      key={account.id}
-                      className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                          {getAccountIcon(account.type)}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{account.name}</p>
-                          <p className="text-sm text-gray-500">{account.balance.toLocaleString("fr-FR")} €</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center">
-                          <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                          <span className="text-sm font-medium text-green-600">+1.2%</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
+        {/* Financial Charts */}
+        <ExpenseHistoryChart expenseHistory={expenseHistory} budgetData={budgetData} monthName={monthName}/>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Recent Transactions */}
-          <div>
-            <Card className="border-0 shadow-sm mb-6">
+          <div className="flex-1">
+            <Card className="border-0 shadow-sm mb-6 lg:mb-0 h-full">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-semibold">Transactions récentes</CardTitle>
               </CardHeader>
@@ -224,27 +241,87 @@ const budgetData = budgetCategories.map((cat) => ({
                       <div className="flex justify-between items-start mb-1">
                         <p className="font-medium text-gray-900 text-sm">{transaction.description}</p>
                         <p
-                          className={`font-semibold text-sm ${transaction.amount > 0 ? "text-green-600" : "text-gray-900"}`}
+                          className={`font-semibold text-sm ${
+                            transaction.amount > 0 ? "text-green-600" : "text-gray-900"
+                          }`}
                         >
                           {transaction.amount > 0 ? "+" : ""}
-                          {transaction.amount.toLocaleString("fr-FR")} €
+                          {formatCurrency(transaction.amount)} €
                         </p>
                       </div>
                       <div className="flex justify-between items-center">
                         <Badge variant="secondary" className="text-xs">
                           {transaction.category}
                         </Badge>
-                        <p className="text-xs text-gray-500">{transaction.date}</p>
+                        <p className="text-xs text-gray-500">{transaction.date.toLocaleDateString("fr-FR")}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
+          </div>    
+          {/* Historical Expenses */}
+          <div className="flex-1">
+            <Card className="border-0 shadow-sm h-full">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Historique des dépenses par mois</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="py-2 px-4 text-sm font-medium text-gray-600">Mois</th>
+                      <th className="py-2 px-4 text-sm font-medium text-gray-600">Dépense (€)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedMonthlyExpenses.map(([month, amount]) => (
+                      <tr key={month} className="hover:bg-gray-50">
+                        <td className="py-2 px-4 text-sm text-gray-900">{month}</td>
+                        <td className="py-2 px-4 text-sm text-gray-900">{formatCurrency(amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          </div>
+          {/* Historical Income */}
+          <div className="flex-1">
+            <Card className="border-0 shadow-sm h-full">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Historique des revenus par mois</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="py-2 px-4 text-sm font-medium text-gray-600">Mois</th>
+                      <th className="py-2 px-4 text-sm font-medium text-gray-600">Revenus (€)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from(
+                      transactions
+                        .filter(t => t.amount > 0)
+                        .reduce((map, t) => {
+                          const monthName = new Date(t.transaction_date).toLocaleString("fr-FR", { month: "long" })
+                          map.set(monthName, (map.get(monthName) || 0) + t.amount)
+                          return map
+                        }, new Map<string, number>())
+                    ).map(([month, amount]) => (
+                      <tr key={month} className="hover:bg-gray-50">
+                        <td className="py-2 px-4 text-sm text-green-900">{month}</td>
+                        <td className="py-2 px-4 text-sm text-gray-900">{formatCurrency(amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
           </div>
         </div>
-        {/* Financial Charts */}
-        <ExpenseHistoryChart expenseHistory={expenseHistory} budgetData={budgetData} n ={monthName} />
         {/* Quick Actions */}
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h2>
@@ -285,5 +362,6 @@ const budgetData = budgetCategories.map((cat) => ({
         </div>
       </main>
     </div>
+    </ThemeProvider>
   )
 }

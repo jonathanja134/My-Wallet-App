@@ -9,6 +9,7 @@ import { AddBudgetDialog } from "@/components/add-budget-dialog"
 import { EditBudgetDialog } from "@/components/edit-budget-dialog"
 import { getBudgetCategories, deleteBudgetCategory } from "@/app/actions/budget"
 import { getTransactions } from "@/app/actions/expenses"
+import { formatCurrency } from "@/lib/utils"
 
 export default async function Budget() {
   const [budgetResult, transactionsResult] = await Promise.all([getBudgetCategories(), getTransactions()])
@@ -84,16 +85,16 @@ export default async function Budget() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-1">Budget total</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalBudget.toLocaleString("fr-FR")} €</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalBudget)} €</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-1">Dépensé</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalSpent.toLocaleString("fr-FR")} €</p>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalSpent)} €</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-1">Restant</p>
                   <p className={`text-2xl font-bold ${remainingBudget >= 0 ? "text-green-600" : "text-red-600"}`}>
-                    {remainingBudget.toLocaleString("fr-FR")} €
+                    {formatCurrency(remainingBudget)} €
                   </p>
                 </div>
               </div>
@@ -140,18 +141,18 @@ export default async function Budget() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">Dépensé</span>
-                      <span className="font-semibold text-gray-900">{category.spent.toLocaleString("fr-FR")} €</span>
+                      <span className="font-semibold text-gray-900">{formatCurrency(category.spent)} €</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">Budget</span>
                       <span className="font-semibold text-gray-900">
-                        {category.budget_amount.toLocaleString("fr-FR")} €
+                        {formatCurrency(category.budget_amount)} €
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">Restant</span>
                       <span className={`font-semibold ${getStatusColor(category.spent, category.budget_amount)}`}>
-                        {remaining.toLocaleString("fr-FR")} €
+                        {formatCurrency(remaining)} €
                       </span>
                     </div>
                     <div>

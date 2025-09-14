@@ -172,9 +172,9 @@ const budgetData = budgetCategories.map((cat) => ({
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-    <div className="min-h-screen bg-gray-50 bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground text-background">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -182,22 +182,22 @@ const budgetData = budgetCategories.map((cat) => ({
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <Wallet className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">My Wallet</h1>
+              <h1 className="text-xl font-semibold text-card">My Wallet</h1>
             </div>
             <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="text-gray-900 font-medium">
+              <Link href="/" className="text-card font-medium">
                 Tableau de bord
               </Link>
-              <Link href="/budget" className="text-gray-500 hover:text-gray-900">
+              <Link href="/budget" className="text-secondary-foreground hover:text-popover">
                 Budget
               </Link>
-              <Link href="/expenses" className="text-gray-500 hover:text-gray-900">
+              <Link href="/expenses" className="text-secondary-foreground hover:text-popover">
                 Dépenses
               </Link>
-              <Link href="/goals" className="text-gray-500 hover:text-gray-900">
+              <Link href="/goals" className="text-secondary-foreground hover:text-popover">
                 Objectifs
               </Link>
-              <Link href="/task" className="text-gray-500 hover:text-gray-900">
+              <Link href="/task" className="text-secondary-foreground hover:text-popover">
                 Task
               </Link>
             </nav>

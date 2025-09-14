@@ -6,17 +6,18 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 
-export interface Task {
+export interface Habit {
   id: string
   user_id: string
-  title: string
-  is_complete: boolean
+  name: string
+  description?: string
+  category: string
+  color: string
+  progress: boolean[]
   created_at: string
   updated_at: string
 }
-export type HabitTrackerProps = {
-  tasks: Task[];
-};
+
 
 // Types for our database
 export interface User {

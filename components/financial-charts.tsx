@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, PieChart } from "lucide-react"
+import { TrendingUp, PieChart, Calendar, CalendarArrowUp, CalendarXIcon, CalendarClock } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import type { Transaction } from "@/app/actions/expenses"
+import { Transaction } from "@/app/types/transaction"
 import { getTransactions } from "@/app/actions/expenses"
+import { ReferenceLine } from "recharts"
 
 interface BudgetItem {
   category: string
@@ -33,7 +34,7 @@ function getExpensesByCategory(
     })
     .reduce((acc, t) => {
       const category = t.budget_categories?.name ?? "Autres"
-      const existing = acc.find((c) => c.category === category)
+      const existing = acc.find((c: any) => c.category === category)
       if (existing) {
         existing.total += Math.abs(t.amount)
       } else {
@@ -69,15 +70,37 @@ export function ExpenseHistoryChart({
     const cumulativeSpent = arr
       .slice(0, index + 1)
       .reduce((sum, t) => sum + t.spent, 0)
+    
     return { ...item, cumulativeSpent }
   })
+  /* Limite budgétaire cumulée */
+const totalBudget = budgetData.reduce((sum, i) => sum + i.budget, 0)
+
+function plannedExpenses(day: number, totalBudget: number): number {
+    const T = new Date();
+    const daysInMonth = new Date(T.getFullYear(), T.getMonth() + 1, 0).getDate();
+
+    // Linear calculation: y = (totalBudget / daysInMonth) * day
+    const todayExpenses = (totalBudget / daysInMonth) * day;
+
+    return todayExpenses;
+}
+
+const PlannedExpenseData = [];
+for (let day = 1; day <= 31; day++) {
+    PlannedExpenseData.push({
+        date: day.toString(),
+        planned: plannedExpenses(day, totalBudget)
+    });
+}
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Courbe des dépenses */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg font-semibold flex items-center">
-            <TrendingUp className="h-5 w-5 mr-2" />
+            <CalendarClock className="h-5 w-5 mr-2" />
             {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
           </CardTitle>
         </CardHeader>
@@ -85,23 +108,58 @@ export function ExpenseHistoryChart({
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={expenseHistoryWithCumulative} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
-                <XAxis dataKey="date" axisLine={true} tickLine={false} />
-                <YAxis axisLine={true} tickLine={false} />
+                <XAxis dataKey="date" 
+                       axisLine={false} 
+                       tickLine={false} 
+                       domain={[0,31]}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  domain={[0, Math.max(totalBudget, ...expenseHistoryWithCumulative.map(d => d.cumulativeSpent))+10]}
+                />
                 <Tooltip
-                  formatter={(value: number) => `${value.toLocaleString("fr-FR")} €`}
-                  contentStyle={{
-                    backgroundColor: "white",
-                    borderRadius: "8px",
-                    border: "none",
-                    boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload || !payload.length) return null;
+                  
+                      const day = label
+                  
+                    return (
+                      <div className="bg-white p-2 rounded shadow">
+                        {/* Bold day + month */}
+                        <p className="font-bold">{`${day} ${monthName}`}</p>
+                    
+                        {/* Values */}
+                        {payload.map((entry, index) => (
+                          <p key={index} style={{ color: entry.color }}>
+                            {entry.name}:{entry.value !== undefined ? entry.value.toLocaleString("fr-FR") + " €" : "-"}
+                          </p>
+                        ))}
+                      </div>
+                    );
                   }}
+                />
+                {/* Limite budgétaire planifiée */}
+                <Line
+                  type="monotone"
+                  dataKey={(data) => {
+                    const day = parseInt(data.date, 10);
+                    const planned = plannedExpenses(day, totalBudget);
+                    return planned;
+                  }}
+                  strokeDasharray="5 5" 
+                  name="Limite planifiée"
+                  stroke="#ffeed4ff"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  dot={false}
                 />
                 {/* Dépenses journalières */}
                 <Line
                   type="monotone"
                   dataKey="spent"
                   name="Montant journalier"
-                  stroke="#0088ff"
+                  stroke="#a200ffff"
                   strokeWidth={3}
                   strokeLinecap="round"
                   dot={false}
@@ -112,10 +170,16 @@ export function ExpenseHistoryChart({
                   type="monotone"
                   dataKey="cumulativeSpent"
                   name="Cumulé"
-                  stroke="#ff5500"
+                  stroke="#ff9500ff"
                   strokeWidth={3}
                   strokeLinecap="round"
                   dot={false}
+                />
+                {/* limite cumulées */}
+                <ReferenceLine
+                  y={budgetData.reduce((sum, item) => sum + item.budget, 0)}
+                  stroke="#888888"
+                  strokeDasharray="5 5"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -135,7 +199,7 @@ export function ExpenseHistoryChart({
           <div className="h-[300px] w-full">
             <div className="space-y-4">
               {budgetData.slice(0, 5).map((item, index) => {
-                const categoryExpense = expensesByCategory.find(e => e.category === item.category)
+                const categoryExpense = expensesByCategory.find((e:any) => e.category === item.category)
                 const spent = categoryExpense?.total ?? 0
                 const percentage = item.budget > 0 ? (spent / item.budget) * 100 : 0
                 return (

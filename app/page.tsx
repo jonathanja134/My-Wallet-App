@@ -33,8 +33,8 @@ export default async function Dashboard() {
     getBudgetCategories(),
   ])
   const now = new Date()
-const currentMonth = now.getMonth() 
-const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() 
+  const currentYear = now.getFullYear()
   const accounts = accountsResult.data || []
   const transactions = transactionsResult.data || []
   const budgetCategories = budgetResult.data || []
@@ -43,8 +43,7 @@ const currentYear = now.getFullYear()
   const totalBudget = getTotalBudget(budgetCategories)
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
-  const monthlyChange = 2.4 // This would be calculated from historical data
-  const savingsGoal = 75
+  const savingsGoal = Math.round(totalExpenses/totalBudget*100)
 
   const recentTransactions = transactions.slice(0, 4).map((transaction) => ({
     description: transaction.description,
@@ -110,6 +109,24 @@ function groupTransactionsByMonth(transactions: Transaction[]) {
 
   return map
 }
+// get this month sum of expenses
+const currentMonthExpenses = transactions
+  .filter(t => {
+    const date = new Date(t.transaction_date)
+    return t.amount < 0 && date.getMonth() === currentMonth && date.getFullYear() === currentYear
+  })
+  .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+
+  // get past month sum of expenses
+const pastMonthExpenses = transactions
+  .filter(t => {
+    const date = new Date(t.transaction_date)
+    return t.amount < 0 && date.getMonth() === currentMonth-1 && date.getFullYear() === currentYear
+  })
+  .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+
+const monthlyChange = pastMonthExpenses === 0 ? NaN : Math.round(((currentMonthExpenses - pastMonthExpenses) / pastMonthExpenses) * 100);
+
 
 // Get month name for the card title
 const monthName =
@@ -152,6 +169,7 @@ const budgetData = budgetCategories.map((cat) => ({
     .reduce((sum, t) => sum + Math.abs(t.amount), 0),
 }))
 
+
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
     <div className="min-h-screen bg-gray-50 bg-background text-foreground">
@@ -179,8 +197,8 @@ const budgetData = budgetCategories.map((cat) => ({
               <Link href="/goals" className="text-gray-500 hover:text-gray-900">
                 Objectifs
               </Link>
-              <Link href="/accounts" className="text-gray-500 hover:text-gray-900">
-                Comptes
+              <Link href="/task" className="text-gray-500 hover:text-gray-900">
+                Task
               </Link>
             </nav>
             <Link href="/expenses">
@@ -198,10 +216,12 @@ const budgetData = budgetCategories.map((cat) => ({
         <div className="mb-8">
           <Card className="border-0 shadow-sm">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Depense mensuel / Objectif</p>
-                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(totalExpenses)} € / {formatCurrency(totalBudget)}  </p>
+              <div className="flex sm:flex-row flex-col sm:items-center sm:justify-between w-full">
+                <div className="sm:w-auto w-full">
+                  <p className="text-sm text-gray-500 mb-1">Dépense mensuelle / Objectif</p>
+                  <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                    {formatCurrency(totalExpenses)} / {formatCurrency(totalBudget)}
+                  </p>
                   <div className="flex items-center mt-2">
                     {monthlyChange > 0 ? (
                       <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
@@ -214,12 +234,11 @@ const budgetData = budgetCategories.map((cat) => ({
                     </span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500 mb-1">Objectif d'épargne</p>
-                  <div className="w-32">
-                    <Progress value={savingsGoal} className="h-2" />
-                    <p className="text-xs text-gray-500 mt-1">{savingsGoal}% atteint</p>
-                  </div>
+                <div className="text-right whitespace-nowrap">
+                   <div className="w-64 flex items-center justify-end mt-2">
+                   <Progress value={savingsGoal} className="h-2" />
+                   <p className="text-xs text-gray-500 p-4">{savingsGoal}% atteint</p>
+                 </div>
                 </div>
               </div>
             </CardContent>

@@ -9,9 +9,8 @@ import { Progress } from "@/components/ui/progress"
 import { ChevronLeft, ChevronRight, Calendar, Trash2 } from "lucide-react"
 import { toggleHabitDay, deleteHabit } from "@/app/actions/habits"
 import type { Habit } from "@/lib/supabase"
-import FireIcon from "../public/fire.svg";
 
-const FireIconAny: any = FireIcon;  
+import { Flame } from "lucide-react";
 
 interface HabitsTrackerProps {
   habits: Habit[]
@@ -68,17 +67,20 @@ export function HabitsTracker({ habits }: HabitsTrackerProps) {
     await toggleHabitDay(habitId, dayIndex, newProgress[habitId][dayIndex])
   }
 
-  const calculateStreak = (progress: boolean[]) => {
-    let streak = 0
-    for (let i = progress.length - 1; i >= 0; i--) {
-      if (progress[i]) {
-        streak++
-      } else {
-        break
-      }
+const calculateStreak = (progress: boolean[]) => {
+  let maxStreak = 0
+  let currentStreak = 0
+  const monthProgress = progress.slice(0, daysInMonth)
+  for (let i = 0; i < monthProgress.length; i++) {
+    if (monthProgress[i]) {
+      currentStreak++
+      if (currentStreak > maxStreak) maxStreak = currentStreak
+    } else {
+      currentStreak = 0
     }
-    return streak
   }
+  return maxStreak
+}
 
   const calculateMonthlyProgress = (progress: boolean[]) => {
     const completedDays = progress.slice(0, daysInMonth).filter(Boolean).length
@@ -154,7 +156,7 @@ export function HabitsTracker({ habits }: HabitsTrackerProps) {
           </div>
 
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-foreground">
               {months[selectedMonth]} {selectedYear}
             </h2>
           </div>
@@ -163,7 +165,7 @@ export function HabitsTracker({ habits }: HabitsTrackerProps) {
 
       {/* Habits List */}
       <div className="space-y-4">
-        {habits.map((habit) => {
+        {[...habits].sort((a, b) => a.name.localeCompare(b.name)).map((habit) => {
           const progress = habitProgress[habit.id] || Array(31).fill(false)
           const streak = calculateStreak(progress)
           const monthlyProgress = calculateMonthlyProgress(progress)
@@ -184,7 +186,7 @@ export function HabitsTracker({ habits }: HabitsTrackerProps) {
                   <div className="flex items-center space-x-2">
                     <Badge variant="secondary" className="flex items-center space-x-1">
                       <span className="sm:hidden">{streak}</span>
-                      <FireIcon className="w-4 h-4 text-red-500" />
+                      <Flame className="w-4 h-4 text-red-500" />
                       <span className="hidden sm:inline">
                         {streak} jour{streak > 1 ? "s" : ""} de suite
                       </span>
@@ -222,9 +224,9 @@ export function HabitsTracker({ habits }: HabitsTrackerProps) {
                             ${
                               isCompleted
                                 ? "border-green-500 bg-green-500 text-white"
-                                : "border-gray-300 bg-white hover:border-gray-400"
+                                : " bg-background"
                             }
-                            ${isToday ? "ring-2 ring-blue-500 ring-offset-1" : ""}
+                            ${isToday ? "ring-0  ring-offset-2" : ""}
                           `}
                           title={`${dayIndex + 1} ${months[selectedMonth]} - ${isCompleted ? "Terminé" : "À faire"}`}
                         >

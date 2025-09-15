@@ -149,7 +149,7 @@ for (let day = 1; day <= 31; day++) {
                   }}
                   strokeDasharray="5 5" 
                   name="Limite planifiée"
-                  stroke="#ffeed4ff"
+                  stroke="#ffeed4ba"
                   strokeWidth={3}
                   strokeLinecap="round"
                   dot={false}

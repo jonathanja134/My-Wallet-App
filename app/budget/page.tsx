@@ -55,9 +55,9 @@ export default async function Budget() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -70,7 +70,7 @@ export default async function Budget() {
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <Wallet className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">Budget</h1>
+              <h1 className="text-xl font-semibold text-foreground">Budget</h1>
             </div>
             <AddBudgetDialog />
           </div>
@@ -84,15 +84,15 @@ export default async function Budget() {
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-1">Budget total</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalBudget)} €</p>
+                  <p className="text-sm text-foreground mb-1">Budget total</p>
+                  <p className="text-2xl font-bold text-foreground">{formatCurrency(totalBudget)} €</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-1">Dépensé</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalSpent)} €</p>
+                  <p className="text-sm text-foreground mb-1">Dépensé</p>
+                  <p className="text-2xl font-bold text-foreground">{formatCurrency(totalSpent)} €</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-gray-500 mb-1">Restant</p>
+                  <p className="text-sm text-foreground mb-1">Restant</p>
                   <p className={`text-2xl font-bold ${remainingBudget >= 0 ? "text-green-600" : "text-red-600"}`}>
                     {formatCurrency(remainingBudget)} €
                   </p>
@@ -141,11 +141,11 @@ export default async function Budget() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">Dépensé</span>
-                      <span className="font-semibold text-gray-900">{formatCurrency(category.spent)} €</span>
+                      <span className="font-semibold text-foreground">{formatCurrency(category.spent)} €</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">Budget</span>
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-foreground">
                         {formatCurrency(category.budget_amount)} €
                       </span>
                     </div>
@@ -192,7 +192,7 @@ export default async function Budget() {
                       return (
                         <div key={category.id} className="flex items-start space-x-3">
                           <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
-                          <p className="text-sm text-gray-700">
+                          <p className="text-sm text-foreground">
                             <strong>{category.name} :</strong> Vous avez dépassé votre budget de{" "}
                             {(percentage - 100).toFixed(1)}%. Considérez réduire les dépenses dans cette catégorie.
                           </p>

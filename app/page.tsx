@@ -182,27 +182,27 @@ const budgetData = budgetCategories.map((cat) => ({
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <Wallet className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-xl font-semibold text-card">My Wallet</h1>
+              <h1 className="text-xl font-semibold text-card-foreground">My Wallet</h1>
             </div>
             <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="text-card font-medium">
+              <Link href="/" className="text-card-foreground font-medium">
                 Tableau de bord
               </Link>
-              <Link href="/budget" className="text-secondary-foreground hover:text-popover">
+              <Link href="/budget" className="text-secondary-foreground hover:text-accent-foreground">
                 Budget
               </Link>
-              <Link href="/expenses" className="text-secondary-foreground hover:text-popover">
+              <Link href="/expenses" className="text-secondary-foreground hover:text-accent-foreground">
                 Dépenses
               </Link>
-              <Link href="/goals" className="text-secondary-foreground hover:text-popover">
+              <Link href="/goals" className="text-secondary-foreground hover:text-accent-foreground">
                 Objectifs
               </Link>
-              <Link href="/task" className="text-secondary-foreground hover:text-popover">
+              <Link href="/task" className="text-secondary-foreground hover:text-accent-foreground">
                 Task
               </Link>
             </nav>
             <Link href="/expenses">
-              <Button size="sm" className="bg-black text-white hover:bg-gray-800">
+              <Button size="sm" className="bg-background text-white hover:bg-gray-800">
                 <Plus className="h-4 w-4 mr-2" />
                 Ajouter
               </Button>
@@ -219,7 +219,7 @@ const budgetData = budgetCategories.map((cat) => ({
               <div className="flex sm:flex-row flex-col sm:items-center sm:justify-between w-full">
                 <div className="sm:w-auto w-full">
                   <p className="text-sm text-gray-500 mb-1">Dépense mensuelle / Objectif</p>
-                  <p className="text-2xl md:text-3xl font-bold text-gray-900">
+                  <p className="text-2xl md:text-3xl font-bold test-secondary-foreground">
                     {formatCurrency(totalExpenses)} / {formatCurrency(totalBudget)}
                   </p>
                   <div className="flex items-center mt-2">
@@ -249,36 +249,38 @@ const budgetData = budgetCategories.map((cat) => ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Recent Transactions */}
           <div className="flex-1">
-            <Card className="border-0 shadow-sm mb-6 lg:mb-0 h-full">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold">Transactions récentes</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="space-y-0">
-                  {recentTransactions.map((transaction, index) => (
-                    <div key={index} className="p-4 hover:bg-gray-50 transition-colors">
-                      <div className="flex justify-between items-start mb-1">
-                        <p className="font-medium text-gray-900 text-sm">{transaction.description}</p>
-                        <p
-                          className={`font-semibold text-sm ${
-                            transaction.amount > 0 ? "text-green-600" : "text-gray-900"
-                          }`}
-                        >
-                          {transaction.amount > 0 ? "+" : ""}
-                          {formatCurrency(transaction.amount)} €
-                        </p>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <Badge variant="secondary" className="text-xs">
-                          {transaction.category}
-                        </Badge>
-                        <p className="text-xs text-gray-500">{transaction.date.toLocaleDateString("fr-FR")}</p>
-                      </div>
+            <CardContent className="p-0">
+            <Card className="border-0 shadow-sm h-full">
+            <div className="max-h-64 overflow-y-auto">
+              <div className="space-y-0">
+                {recentTransactions.map((transaction, index) => (
+                  <div key={index} className="p-4 hover:bg-gray-800 transition-colors">
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="font-medium text-foreground text-sm">{transaction.description}</p>
+                      <p
+                        className={`font-semibold text-sm ${
+                          transaction.amount > 0 ? "text-green-600" : "text-foreground"
+                        }`}
+                      >
+                        {transaction.amount > 0 ? "+" : ""}
+                        {formatCurrency(transaction.amount)} €
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <div className="flex justify-between items-center">
+                      <Badge variant="secondary" className="text-xs">
+                        {transaction.category}
+                      </Badge>
+                      <p className="text-xs text-foreground">
+                        {transaction.date.toLocaleDateString("fr-FR")}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+          </CardContent>
+              
           </div>    
           {/* Historical Expenses */}
           <div className="flex-1">
@@ -290,15 +292,15 @@ const budgetData = budgetCategories.map((cat) => ({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="py-2 px-4 text-sm font-medium text-gray-600">Mois</th>
-                      <th className="py-2 px-4 text-sm font-medium text-gray-600">Dépense (€)</th>
+                      <th className="py-2 px-4 text-sm font-medium text-foreground">Mois</th>
+                      <th className="py-2 px-4 text-sm font-medium text-foreground">Dépense (€)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedMonthlyExpenses.map(([month, amount]) => (
-                      <tr key={month} className="hover:bg-gray-50">
-                        <td className="py-2 px-4 text-sm text-gray-900">{month}</td>
-                        <td className="py-2 px-4 text-sm text-gray-900">{formatCurrency(amount)}</td>
+                      <tr key={month} className="hover:bg-gray-800 ">
+                        <td className="py-2 px-4 text-sm text-foreground">{month}</td>
+                        <td className="py-2 px-4 text-sm text-foreground">-{formatCurrency(amount)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -316,8 +318,8 @@ const budgetData = budgetCategories.map((cat) => ({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="py-2 px-4 text-sm font-medium text-gray-600">Mois</th>
-                      <th className="py-2 px-4 text-sm font-medium text-gray-600">Revenus (€)</th>
+                      <th className="py-2 px-4 text-sm font-medium text-foreground">Mois</th>
+                      <th className="py-2 px-4 text-sm font-medium text-foreground">Revenus (€)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -330,9 +332,9 @@ const budgetData = budgetCategories.map((cat) => ({
                           return map
                         }, new Map<string, number>())
                     ).map(([month, amount]) => (
-                      <tr key={month} className="hover:bg-gray-50">
-                        <td className="py-2 px-4 text-sm text-green-900">{month}</td>
-                        <td className="py-2 px-4 text-sm text-gray-900">{formatCurrency(amount)}</td>
+                      <tr key={month} className="hover:bg-gray-800">
+                        <td className="py-2 px-4 text-sm text-foreground">{month}</td>
+                        <td className="py-2 px-4 text-sm text-foreground">{formatCurrency(amount)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -343,37 +345,37 @@ const budgetData = budgetCategories.map((cat) => ({
         </div>
         {/* Quick Actions */}
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Actions rapides</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Link href="/budget">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 text-center">
-                  <PiggyBank className="h-8 w-8 mx-auto mb-2 text-gray-600" />
-                  <p className="font-medium text-gray-900">Gérer le budget</p>
+                  <PiggyBank className="h-8 w-8 mx-auto mb-2 text-foreground" />
+                  <p className="font-medium text-foreground">Gérer le budget</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/expenses">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 text-center">
-                  <CreditCard className="h-8 w-8 mx-auto mb-2 text-gray-600" />
-                  <p className="font-medium text-gray-900">Ajouter dépense</p>
+                  <CreditCard className="h-8 w-8 mx-auto mb-2 text-foreground" />
+                  <p className="font-medium text-foreground">Ajouter dépense</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/goals">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 text-center">
-                  <Target className="h-8 w-8 mx-auto mb-2 text-gray-600" />
-                  <p className="font-medium text-gray-900">Mes objectifs</p>
+                  <Target className="h-8 w-8 mx-auto mb-2 text-foreground" />
+                  <p className="font-medium text-foreground">Mes objectifs</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/accounts">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 text-center">
-                  <Wallet className="h-8 w-8 mx-auto mb-2 text-gray-600" />
-                  <p className="font-medium text-gray-900">Ajouter compte</p>
+                  <Wallet className="h-8 w-8 mx-auto mb-2 text-foreground" />
+                  <p className="font-medium text-foreground">Ajouter compte</p>
                 </CardContent>
               </Card>
             </Link>

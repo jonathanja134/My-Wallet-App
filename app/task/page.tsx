@@ -13,7 +13,7 @@ export default async function Habits() {
   return (
     <div className="bg-background min-h-screen">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-card border-border border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -23,10 +23,10 @@ export default async function Habits() {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
-              <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-                <Wallet className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-foreground" />
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">Suivi des Habitudes</h1>
+              <h1 className="text-xl font-semibold text-foreground">Suivi des Habitudes</h1>
             </div>
             <AddHabitDialog />
           </div>

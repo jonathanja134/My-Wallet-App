@@ -20,6 +20,7 @@ import { createHabit } from "@/app/actions/habits"
 export function AddHabitDialog() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [selectedColor, setSelectedColor] = useState("#3B82F6")
 
   const habitCategories = [
     { name: "Santé", color: "#10B981" },
@@ -43,11 +44,11 @@ export function AddHabitDialog() {
     }
     setLoading(false)
   }
-
+  const [active, setActive] = useState(false)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="bg-black text-white hover:bg-gray-800">
+        <Button size="sm" className="bg-background text-white hover:bg-gray-800">
           <Plus className="h-4 w-4 mr-2" />
           Nouvelle habitude
         </Button>
@@ -98,9 +99,10 @@ export function AddHabitDialog() {
                     value={category.color}
                     className="sr-only"
                     defaultChecked={category.color === "#3B82F6"}
+                    onChange={() => setSelectedColor(category.color)}
                   />
                   <div
-                    className="w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 transition-colors"
+                    className={`w-8 h-8 rounded-full border-2 border-transparent hover:border-gray-300 transition-colors`}
                     style={{ backgroundColor: category.color }}
                   ></div>
                 </label>

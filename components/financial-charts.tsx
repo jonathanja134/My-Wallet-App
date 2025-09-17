@@ -125,14 +125,14 @@ for (let day = 1; day <= 31; day++) {
                       const day = label
                   
                     return (
-                      <div className="bg-white p-2 rounded shadow">
+                      <div className="bg-background p-2 rounded shadow">
                         {/* Bold day + month */}
                         <p className="font-bold">{`${day} ${monthName}`}</p>
                     
                         {/* Values */}
                         {payload.map((entry, index) => (
                           <p key={index} style={{ color: entry.color }}>
-                            {entry.name}:{entry.value !== undefined ? entry.value.toLocaleString("fr-FR") + " €" : "-"}
+                            {entry.name}{` : `}{entry.value !== undefined ? entry.value.toLocaleString("fr-FR") + " €" : "-"}
                           </p>
                         ))}
                       </div>

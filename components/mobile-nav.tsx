@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Home, PiggyBank, CreditCard, Target, Wallet, Settings, User, HelpCircle, LogOut } from "lucide-react"
+import { Menu, Home, PiggyBank, CreditCard, Target, Wallet, Settings, User, HelpCircle, LogOut,CheckCheckIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
@@ -13,7 +13,7 @@ const navigation = [
   { name: "Budget", href: "/budget", icon: PiggyBank },
   { name: "Dépenses", href: "/expenses", icon: CreditCard },
   { name: "Objectifs", href: "/goals", icon: Target },
-  { name: "Comptes", href: "/accounts", icon: Wallet },
+  { name: "Habitudes", href: "/task", icon: CheckCheckIcon },
 ]
 
 const secondaryNavigation = [
@@ -43,7 +43,7 @@ export function MobileNav() {
             </div>
             <div>
               <h2 className="text-lg font-semibold">My Wallet</h2>
-              <p className="text-sm text-gray-500">demo@mywallet.com</p>
+              <p className="text-sm text-gray-500">Jonathan</p>
             </div>
           </div>
 
@@ -60,7 +60,7 @@ export function MobileNav() {
                     onClick={() => setOpen(false)}
                     className={cn(
                       "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      isActive ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100",
+                      isActive ? "bg-black text-white" : "text-foreground hover:bg-gray-100",
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -80,7 +80,7 @@ export function MobileNav() {
                       key={item.name}
                       href={item.href}
                       onClick={() => setOpen(false)}
-                      className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                      className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-gray-100 transition-colors"
                     >
                       <Icon className="h-5 w-5" />
                       <span>{item.name}</span>

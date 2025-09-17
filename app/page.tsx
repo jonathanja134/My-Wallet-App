@@ -23,6 +23,8 @@ import { ExpenseHistoryChart } from "@/components/financial-charts"
 import { getTotalExpenses, getTotalIncome,getTotalBudget } from "@/lib/utils"
 import { ThemeProvider } from "next-themes"
 import { formatCurrency } from "@/lib/utils"
+import { BlurredAmount } from "@/components/BlurredAmount"
+
 
 
 
@@ -41,6 +43,7 @@ export default async function Dashboard() {
   const totalExpenses = getTotalExpenses(transactions, now.getMonth(), now.getFullYear())
   const totalIncome = getTotalIncome(transactions)
   const totalBudget = getTotalBudget(budgetCategories)
+
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
   const savingsGoal = Math.round(totalExpenses/totalBudget*100)
@@ -219,9 +222,7 @@ const budgetData = budgetCategories.map((cat) => ({
               <div className="flex sm:flex-row flex-col sm:items-center sm:justify-between w-full">
                 <div className="sm:w-auto w-full">
                   <p className="text-sm text-gray-500 mb-1">Dépense mensuelle / Objectif</p>
-                  <p className="text-2xl md:text-3xl font-bold test-secondary-foreground">
-                    {formatCurrency(totalExpenses)} / {formatCurrency(totalBudget)}
-                  </p>
+                  <BlurredAmount totalExpenses={totalExpenses} totalBudget={totalBudget} />
                   <div className="flex items-center mt-2">
                     {monthlyChange > 0 ? (
                       <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />

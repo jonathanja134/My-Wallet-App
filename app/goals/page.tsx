@@ -71,9 +71,9 @@ export default async function Goals() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -86,7 +86,7 @@ export default async function Goals() {
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <Wallet className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">Objectifs financiers</h1>
+              <h1 className="text-xl font-semibold text-foreground">Objectifs financiers</h1>
             </div>
             <AddGoalDialog />
           </div>
@@ -101,7 +101,7 @@ export default async function Goals() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-1">Objectifs totaux</p>
-                  <p className="text-2xl font-bold text-gray-900">{totalTargets.toLocaleString("fr-FR")} €</p>
+                  <p className="text-2xl font-bold text-foreground">{totalTargets.toLocaleString("fr-FR")} €</p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-gray-500 mb-1">Épargné</p>
@@ -212,7 +212,7 @@ export default async function Goals() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Vos paramètres actuels</h4>
+                  <h4 className="font-medium text-foreground mb-3">Vos paramètres actuels</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Épargne mensuelle moyenne :</span>
@@ -229,7 +229,7 @@ export default async function Goals() {
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Projection</h4>
+                  <h4 className="font-medium text-foreground mb-3">Projection</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Capital nécessaire (règle 4%) :</span>

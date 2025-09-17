@@ -185,20 +185,20 @@ const budgetData = budgetCategories.map((cat) => ({
               <h1 className="text-xl font-semibold text-card-foreground">My Wallet</h1>
             </div>
             <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="text-card-foreground font-medium">
+              <Link href="/" className="font-semibold text-card-foreground">
                 Tableau de bord
               </Link>
-              <Link href="/budget" className="text-secondary-foreground hover:text-accent-foreground">
+              <Link href="/budget" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
                 Budget
               </Link>
-              <Link href="/expenses" className="text-secondary-foreground hover:text-accent-foreground">
+              <Link href="/expenses" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
                 Dépenses
               </Link>
-              <Link href="/goals" className="text-secondary-foreground hover:text-accent-foreground">
+              <Link href="/goals" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
                 Objectifs
               </Link>
-              <Link href="/task" className="text-secondary-foreground hover:text-accent-foreground">
-                Task
+              <Link href="/task" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
+                Habitudes
               </Link>
             </nav>
             <Link href="/expenses">

@@ -62,7 +62,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@react-native-community/cli": "latest",
+    "@react-native-community/cli": "^10.2.1",
     "@svgr/webpack": "^8.1.0",
     "@types/node": "^22",
     "@types/react": "^19.1.13",

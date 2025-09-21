@@ -121,14 +121,11 @@ for (let day = 1; day <= 31; day++) {
                 <Tooltip
                   content={({ active, payload, label }) => {
                     if (!active || !payload || !payload.length) return null;
-                  
                       const day = label
-                  
                     return (
                       <div className="bg-background p-2 rounded shadow">
                         {/* Bold day + month */}
                         <p className="font-bold">{`${day} ${monthName}`}</p>
-                    
                         {/* Values */}
                         {payload.map((entry, index) => (
                           <p key={index} style={{ color: entry.color }}>

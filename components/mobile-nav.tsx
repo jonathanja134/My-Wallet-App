@@ -67,7 +67,7 @@ export function MobileNav({ userEmail }: MobileNavProps) {
             </div>
             <div>
               <h2 className="text-lg font-semibold">My Wallet</h2>
-              <p className="text-sm text-gray-500 truncate">{userEmail || "Utilisateur"}</p>
+              <p className="text-sm text-foreground truncate">{userEmail || "Utilisateur"}</p>
             </div>
           </div>
 
@@ -84,7 +84,7 @@ export function MobileNav({ userEmail }: MobileNavProps) {
                     onClick={() => setOpen(false)}
                     className={cn(
                       "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                      isActive ? "bg-black text-white" : "text-gray-700 hover:bg-gray-100",
+                      isActive ? "bg-black text-white" : "text-foreground hover:bg-gray-100",
                     )}
                   >
                     <Icon className="h-5 w-5" />
@@ -104,7 +104,7 @@ export function MobileNav({ userEmail }: MobileNavProps) {
                       key={item.name}
                       href={item.href}
                       onClick={() => setOpen(false)}
-                      className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+                      className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-foreground hover:bg-gray-100 transition-colors"
                     >
                       <Icon className="h-5 w-5" />
                       <span>{item.name}</span>

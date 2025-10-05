@@ -70,13 +70,11 @@ export async function toggleHabitDay(habitId: string, dayIndex: number, complete
       updated_at: new Date().toISOString(),
     })
     .eq("id", habitId)
-    .eq("user_id", USER_ID)
 
   if (error) {
     return { error: error.message }
   }
 
-  revalidatePath("/habits")
   return { success: true }
 }
 

@@ -55,7 +55,7 @@ const ExpenseHistoryChart = dynamic(() => import("@/components/financial-charts"
 
 export default async function Dashboard() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { user }, error } = await supabase.auth.getUser()
   
   // Optimize: Only fetch essential data for dashboard
   const [transactionsResult, budgetResult] = await Promise.all([
@@ -78,14 +78,9 @@ export default async function Dashboard() {
   const totalIncome = CurrentMonthtransactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0)
   const totalBudget = getTotalBudget(budgetCategories)
 
-  if (!session?.user) {
+  if (!user) {
     console.log("Please log in to view your dashboard.")
   }
-  if (session!=null)
-    {  
-      const user = session.user
-      console.log("User info:", user)
-    }
   const savingsGoal = Math.round(totalExpenses / totalBudget * 100)
 
   const recentTransactions = transactions.slice(0, 4).map((transaction) => ({

@@ -7,6 +7,10 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceL
 import { Transaction } from "@/lib/supabase"
 import { getTransactions } from "@/app/actions/expenses"
 import { BudgetItem ,ExpenseHistoryChartProps} from "@/lib/supabase"
+import { Button } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 
 function getExpensesByCategory(
   transactions: Transaction[],
@@ -31,28 +35,7 @@ function getExpensesByCategory(
       return acc
     }, [] as { category: string; total: number }[])
 }
-function buildExpenseHistory(transactions: Transaction[]): ExpenseHistoryChartProps["expenseHistory"] {
-  const month = new Date().getMonth()
-  const year = new Date().getFullYear()
-  return transactions
-  .filter((t) => t.amount < 0)
-  .filter((t) => {
-    if (month === undefined || year === undefined) return true
-    const d = new Date(t.transaction_date)
-    return d.getMonth() === month && d.getFullYear() === year
-  })
-    .map(t => {
-      const dateObj = new Date(t.transaction_date)
-      const day = dateObj.getDate().toString() // day of month
-      return {
-        amount: t.amount,
-        day,
-        transaction_date: t.transaction_date,
-        date: day,
-        spent: Math.abs(t.amount),
-      }
-    })
-}
+
 export function ExpenseHistoryChart({
   expenseHistory = [],
   budgetData = [],
@@ -60,15 +43,52 @@ export function ExpenseHistoryChart({
   transactions = [],
 }: ExpenseHistoryChartProps & { transactions?: Transaction[] }) {
 
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+
+  const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+
+  function buildExpenseHistory(transactions: Transaction[]): ExpenseHistoryChartProps["expenseHistory"] {
+    
+    return transactions
+    .filter((t) => t.amount < 0)
+    .filter((t) => {
+      if (selectedMonth === undefined || selectedYear === undefined) return true
+      const d = new Date(t.transaction_date)
+      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear
+    })
+      .map(t => {
+        const dateObj = new Date(t.transaction_date)
+        const day = dateObj.getDate().toString() // day of month
+        return {
+          amount: t.amount,
+          day,
+          transaction_date: t.transaction_date,
+          date: day,
+          spent: Math.abs(t.amount),
+        }
+      })
+  }
+
+  const navigateMonth = (dir: "prev" | "next") => {
+    if (dir === "prev") {
+      if (selectedMonth === 0) {
+        setSelectedMonth(11)
+        setSelectedYear(selectedYear - 1)
+      } else setSelectedMonth(selectedMonth - 1)
+    } else {
+      if (selectedMonth === 11) {
+        setSelectedMonth(0)
+        setSelectedYear(selectedYear + 1)
+      } else setSelectedMonth(selectedMonth + 1)
+    }
+  }
+
   // Remove client-side data fetching - use props instead
-  const [isLoading, setIsLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
   
-
   // Fix hydration mismatch by ensuring client-side rendering
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  useEffect(() => {setMounted(true)}, [])
 
   // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
@@ -94,11 +114,10 @@ export function ExpenseHistoryChart({
     )
   }
 
-  const now = new Date()
   const expensesByCategory = getExpensesByCategory(
     transactions,
-    now.getMonth(),
-    now.getFullYear()
+    selectedMonth,
+    selectedYear
   )
 
   // Show loading state if no data
@@ -163,10 +182,52 @@ export function ExpenseHistoryChart({
       {/* Courbe des dépenses */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center">
-            <CalendarClock className="h-5 w-5 mr-2" />
-            {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
-          </CardTitle>
+          {/* Month Navigation */}
+          <Card className="border-0 shadow-sm bg-card">
+            <CardContent className="p-6 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <Button variant="ghost" size="sm" onClick={() => navigateMonth("prev")}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center space-x-4">
+                  <Select
+                    value={selectedMonth.toString()}
+                    onValueChange={(v) => setSelectedMonth(Number(v))}
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map((month, i) => (
+                        <SelectItem key={i} value={i.toString()}>
+                          {month}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                    
+                  <Select
+                    value={selectedYear.toString()}
+                    onValueChange={(v) => setSelectedYear(Number(v))}
+                  >
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (
+                        <SelectItem key={y} value={y.toString()}>
+                          {y}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => navigateMonth("next")}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </CardHeader>
         <CardContent>
             <div className="h-[300px] w-full">

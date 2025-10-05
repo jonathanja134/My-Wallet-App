@@ -2,6 +2,7 @@
 
 import { supabase } from "@/lib/supabase"
 import { revalidatePath } from "next/cache"
+import { createClient } from "@/lib/supabaseServer"
 
 // Get currently authenticated user ID
 async function getCurrentUserId(token?: string): Promise<string | null> {
@@ -12,7 +13,6 @@ async function getCurrentUserId(token?: string): Promise<string | null> {
       console.log("Error getting user with token:", error)
       return null
     }
-    console.log("Current user with token:", user.id)
     return user.id
   } else {
     // For client-side calls, use the current session
@@ -21,14 +21,20 @@ async function getCurrentUserId(token?: string): Promise<string | null> {
       console.log("Error getting current user:", error)
       return null
     }
-    console.log("Current user from session:", user.id)
     return user.id
   }
 }
 
-export async function createAccount(formData: FormData, token?: string) {
-  const userId = await getCurrentUserId(token)
-  if (!userId) return { error: "Not authenticated" }
+export async function createAccount(formData: FormData) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) return { error: "Non authentifié" }
+
+  const userId = user.id
 
   const name = formData.get("name") as string
   const type = formData.get("type") as string
@@ -64,9 +70,16 @@ export async function createAccount(formData: FormData, token?: string) {
   return { success: true, data }
 }
 
-export async function getAccounts(token: string) {
-  const userId = await getCurrentUserId(token)
-  if (!userId) return { error: "Not authenticated" }
+export async function getAccounts() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) return { error: "Non authentifié" }
+
+  const userId = user.id
 
   const { data, error } = await supabase
     .from("accounts")
@@ -78,9 +91,16 @@ export async function getAccounts(token: string) {
   return { data }
 }
 
-export async function getAccountHistory(accountId: string, token: string) {
-  const userId = await getCurrentUserId(token)
-  if (!userId) return { error: "Not authenticated" }
+export async function getAccountHistory(accountId: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) return { error: "Non authentifié" }
+
+  const userId = user.id
 
   // Ensure account belongs to current user
   const { data: account } = await supabase
@@ -102,9 +122,16 @@ export async function getAccountHistory(accountId: string, token: string) {
   return { data }
 }
 
-export async function syncAccount(accountId: string, token: string) {
-  const userId = await getCurrentUserId(token)
-  if (!userId) return { error: "Not authenticated" }
+export async function syncAccount(accountId: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) return { error: "Non authentifié" }
+
+  const userId = user.id
 
   // Ensure account belongs to current user
   const { data: accountData } = await supabase

@@ -1,28 +1,27 @@
 'use client'
-
+import ThemeProvider from '@/components/theme-provider'
 import { ReactNode } from 'react'
-import { ThemeProvider as NextThemesProvider } from 'next-themes'
 
-interface ThemeProviderProps {
+interface ThemeWrapperProps {
   children: ReactNode
   attribute?: 'class' | 'data-theme'
   enableSystem?: boolean
   defaultTheme?: string
 }
 
-export default function ThemeProvider({
+export function ThemeWrapper({
   children,
   attribute = 'class',
   enableSystem = true,
   defaultTheme = 'dark',
-}: ThemeProviderProps) {
+}: ThemeWrapperProps) {
   return (
-    <NextThemesProvider
+    <ThemeProvider
       attribute={attribute}
       enableSystem={enableSystem}
       defaultTheme={defaultTheme}
     >
       {children}
-    </NextThemesProvider>
+    </ThemeProvider>
   )
 }

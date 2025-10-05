@@ -1,19 +1,17 @@
-import type { Metadata } from 'next'
+"use client"
 import './css/globals.css'
 import './css/critical.css'
-import { ThemeProvider } from '@/components/theme-provider'
-
-export const metadata: Metadata = {
-  title: 'Wallet',
-  description: 'Created with v0',
-  generator: 'v0.dev',
-}
+import  ThemeProvider from '@/components/theme-provider'
+import { useEffect, useState } from 'react'
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
   return (
     <html lang="en">
       <head>
@@ -28,10 +26,12 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>
-        <ThemeProvider attribute="class" enableSystem defaultTheme="dark">
-          {children}
-        </ThemeProvider>
+      <body className="loaded">
+      {mounted && (
+          <ThemeProvider attribute="class" enableSystem defaultTheme="dark">
+            {children}
+          </ThemeProvider>
+        )}
         </body>
     </html>
   )

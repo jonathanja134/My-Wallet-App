@@ -119,7 +119,7 @@ export interface Transaction {
 
 export interface ExpensesClientProps {
   initialTransactions: Transaction[]
-  session: Session | null
+  user: User | null
 }
 
 export interface Session {

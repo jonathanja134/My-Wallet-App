@@ -52,13 +52,12 @@ export default async function Expenses() {
     }
   )
   
-  // Get the session
-  const { data: { session } } = await supabase.auth.getSession()
+
+  const { data: { user }, error } = await supabase.auth.getUser()
+
   
-  console.log("Session in expenses/page.tsx:", session);
-  
-  if (!session) {
-    console.log("No session - redirecting or showing auth form")
+  if (!user) {
+    console.log("No user - redirecting or showing auth form")
   }
 
   // Fetch data only if user is authenticated
@@ -66,12 +65,12 @@ export default async function Expenses() {
   let accounts = []
   let categories: any[] = []
 
-  if (session) {
+  if (user) {
     try {
       // Optimize: Load essential data
       const [transactionsResult, accountsResult, categoriesResult] = await Promise.all([
         getTransactions(),
-        getAccounts(session.access_token),
+        getAccounts(),
         getBudgetCategories()
       ])
 
@@ -119,21 +118,21 @@ export default async function Expenses() {
               </div>
               <h1 className="text-xl font-semibold text-foreground">Dépenses</h1>
             </div>
-            {session && <AddExpenseDialog accounts={accounts} categories={categories} />}
+            {user && <AddExpenseDialog accounts={accounts} categories={categories} />}
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Show auth state */}
-        {!session && (
+        {!user && (
           <div className="text-center py-8">
             <p className="text-lg mb-4">Veuillez vous connecter pour voir vos dépenses</p>
             {/* You can add a login button or redirect here */}
           </div>
         )}
 
-        {session && (
+        {user && (
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -171,7 +170,7 @@ export default async function Expenses() {
                       <div className="relative">
                         <ExpensesClient 
                           initialTransactions={transactions} 
-                          session={session}
+                          user={user}
                         />
                       </div>
                     </div>

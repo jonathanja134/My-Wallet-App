@@ -2,17 +2,16 @@
 
 import { supabase } from "@/lib/supabase"
 import { revalidatePath } from "next/cache"
+import { createClient } from "@/lib/supabaseServer"
 
-// Helper: get user from access token
-async function getUserFromToken(token: string) {
-  const { data: { user }, error } = await supabase.auth.getUser(token)
-  if (error || !user) return null
-  return user
-}
+export async function createGoal(formData: FormData) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-export async function createGoal(formData: FormData, token: string) {
-  const user = await getUserFromToken(token)
-  if (!user) return { success: false, error: "Not authenticated" }
+  if (authError || !user) return { error: "Non authentifié" }
 
   const goal = {
     name: formData.get("name"),
@@ -31,9 +30,14 @@ export async function createGoal(formData: FormData, token: string) {
   return { success: true, data }
 }
 
-export async function updateGoalProgress(id: string, amount: number, token: string) {
-  const user = await getUserFromToken(token)
-  if (!user) return { success: false, error: "Not authenticated" }
+export async function updateGoalProgress(id: string, amount: number) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) return { error: "Non authentifié" }
 
   const { data: goal } = await supabase
     .from("goals")
@@ -58,9 +62,14 @@ export async function updateGoalProgress(id: string, amount: number, token: stri
   return { success: true, data }
 }
 
-export async function getGoals(token: string) {
-  const user = await getUserFromToken(token)
-  if (!user) return { success: false, error: "Not authenticated" }
+export async function getGoals() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) return { error: "Non authentifié" }
 
   const { data, error } = await supabase
     .from("goals")
@@ -73,8 +82,13 @@ export async function getGoals(token: string) {
 }
 
 export async function deleteGoal(id: string, token: string) {
-  const user = await getUserFromToken(token)
-  if (!user) return { success: false, error: "Not authenticated" }
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) return { error: "Non authentifié" }
 
   const { error } = await supabase
     .from("goals")

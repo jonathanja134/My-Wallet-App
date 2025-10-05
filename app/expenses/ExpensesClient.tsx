@@ -21,19 +21,19 @@ import { deleteTransaction } from "@/app/actions/expenses"
 
 
 
-export default function ExpensesClient({ initialTransactions, session }: ExpensesClientProps) {
+export default function ExpensesClient({ initialTransactions, user }: ExpensesClientProps) {
   const [transactions, setTransactions] = useState(initialTransactions)
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
   const timeout = setTimeout(async () => {
-    if (!session) return
+    if (!user) return
     setLoading(true)
     try {
       const res = await fetch(`/api/search-transactions?q=${encodeURIComponent(searchQuery)}`, {
         headers: {
-          Authorization: `Bearer ${session.access_token}`, // envoie le token dans l'en-tête
+          Authorization: `Bearer ${user}`, // envoie le token dans l'en-tête
         },
       })
 
@@ -53,9 +53,9 @@ export default function ExpensesClient({ initialTransactions, session }: Expense
   }, 500)
 
   return () => clearTimeout(timeout)
-}, [searchQuery, session])
+}, [searchQuery, user])
 
-  if (!session) return <p>Not authenticated</p>
+  if (!user) return <p>Not authenticated</p>
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {

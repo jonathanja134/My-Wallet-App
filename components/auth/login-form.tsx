@@ -121,7 +121,7 @@ export function LoginForm() {
           </Alert>
         )}
 
-        <Button type="submit" className="w-full bg-black hover:bg-gray-800" disabled={loading}>
+        <Button type="submit" className="w-full bg-card text-card-foreground hover:bg-card-foreground hover:text-card" disabled={loading}>
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -138,7 +138,7 @@ export function LoginForm() {
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-white px-2 text-gray-500">ou</span>
+          <span className="bg-background px-2 text-foreground">ou</span>
         </div>
       </div>
 

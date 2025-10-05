@@ -86,9 +86,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect to home if accessing login while authenticated
-  //if (request.nextUrl.pathname === "/login" && user) {
-    //return NextResponse.redirect(new URL("/", request.url))
-  //}
+  if (request.nextUrl.pathname === "/login" && user) {
+    return NextResponse.redirect(new URL("/", request.url))
+  }
 
   return response
 }

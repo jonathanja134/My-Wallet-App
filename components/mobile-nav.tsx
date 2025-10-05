@@ -28,7 +28,7 @@ const navigation = [
   { name: "Dépenses", href: "/expenses", icon: CreditCard },
   { name: "Objectifs", href: "/goals", icon: Target },
   { name: "Comptes", href: "/accounts", icon: Wallet },
-  { name: "Habitudes", href: "/habits", icon: Calendar },
+  { name: "Habitudes", href: "/task", icon: Calendar },
   { name: "Notes", href: "/notes", icon: FileText },
 ]
 

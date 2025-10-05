@@ -13,40 +13,80 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Plus,
+  CheckCircle,
+  FileText,
 } from "lucide-react"
 import Link from "next/link"
-import { MobileNav } from "@/components/mobile-nav"
-import { getAccounts } from "@/app/actions/accounts"
-import { getTransactions } from "@/app/actions/expenses"
-import { getBudgetCategories } from "@/app/actions/budget"
-import { ExpenseHistoryChart } from "@/components/financial-charts"
 import { getTotalExpenses, getTotalIncome,getTotalBudget } from "@/lib/utils"
 import { ThemeProvider } from "next-themes"
 import { formatCurrency } from "@/lib/utils"
 import { BlurredAmount } from "@/components/BlurredAmount"
+import { createClient } from "@/lib/supabaseServer"
+import { MobileNav } from "@/components/mobile-nav"
+import { getTransactions } from "@/app/actions/expenses"
+import { getBudgetCategories } from "@/app/actions/budget"
+import dynamic from "next/dynamic"
+import {Transaction} from "@/lib/supabase"
 
-
+// Lazy load the heavy chart component
+const ExpenseHistoryChart = dynamic(() => import("@/components/financial-charts").then(mod => ({ default: mod.ExpenseHistoryChart })), {
+  loading: () => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="border-0 shadow-sm rounded-lg p-6">
+        <div className="h-[300px] w-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+            <p className="text-gray-500">Chargement des graphiques...</p>
+          </div>
+        </div>
+      </div>
+      <div className="border-0 shadow-sm rounded-lg p-6">
+        <div className="h-[300px] w-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+            <p className="text-gray-500">Chargement des graphiques...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
 
 
 export default async function Dashboard() {
-  const [accountsResult, transactionsResult, budgetResult] = await Promise.all([
-    getAccounts(),
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  // Optimize: Only fetch essential data for dashboard
+  const [transactionsResult, budgetResult] = await Promise.all([
     getTransactions(),
-    getBudgetCategories(),
+    getBudgetCategories()
   ])
-  const now = new Date()
+
+  // Use a consistent date for SSR to prevent hydration mismatch
+  const now = new Date() // Fallback date for SSR
   const currentMonth = now.getMonth() 
   const currentYear = now.getFullYear()
-  const accounts = accountsResult.data || []
   const transactions = transactionsResult.data || []
   const budgetCategories = budgetResult.data || []
-  const totalExpenses = getTotalExpenses(transactions, now.getMonth(), now.getFullYear())
-  const totalIncome = getTotalIncome(transactions)
+  const CurrentMonthtransactions = transactions.filter((t) => {
+      if (!t.transaction_date) return false
+      const date = new Date(t.transaction_date)
+      return date.getMonth() === currentMonth && date.getFullYear() === currentYear
+    })
+  const totalExpenses = CurrentMonthtransactions.filter((t) => t.amount < 0).reduce((sum, t) => sum + Math.abs(t.amount), 0)
+  const totalIncome = CurrentMonthtransactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0)
   const totalBudget = getTotalBudget(budgetCategories)
 
-
-  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
-  const savingsGoal = Math.round(totalExpenses/totalBudget*100)
+  if (!session?.user) {
+    console.log("Please log in to view your dashboard.")
+  }
+  if (session!=null)
+    {  
+      const user = session.user
+      console.log("User info:", user)
+    }
+  const savingsGoal = Math.round(totalExpenses / totalBudget * 100)
 
   const recentTransactions = transactions.slice(0, 4).map((transaction) => ({
     description: transaction.description,
@@ -55,126 +95,86 @@ export default async function Dashboard() {
     date: new Date(transaction.transaction_date),
   }))
 
-  
+  const monthsOrder = [
+    "janvier","février","mars","avril","mai","juin",
+    "juillet","août","septembre","octobre","novembre","décembre"
+  ];
 
-  const getAccountIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "compte courant":
-        return <CreditCard className="h-4 w-4" />
-      case "épargne":
-        return <PiggyBank className="h-4 w-4" />
-      case "investissement":
-        return <TrendingUp className="h-4 w-4" />
-      case "assurance":
-        return <Building className="h-4 w-4" />
-      case "cryptomonnaies":
-        return <Coins className="h-4 w-4" />
-      case "immobilier":
-        return <Building className="h-4 w-4" />
-      default:
-        return <Wallet className="h-4 w-4" />
-    }
+  const sortedMonthlyExpenses = Array.from(groupTransactionsByMonth(transactions))
+    .sort((a, b) => monthsOrder.indexOf(a[0]) - monthsOrder.indexOf(b[0]));
+
+
+  function groupTransactionsByMonth(transactions: Transaction[]) {
+    const map = new Map<string, number>()
+
+    transactions
+      .filter((t) => t.amount < 0)
+      .forEach(t => {
+        const date = new Date(t.transaction_date)
+        const monthNamesFR = [
+          "janvier", "février", "mars", "avril", "mai", "juin",
+          "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+        ];
+        const monthName = monthNamesFR[date.getMonth()];      
+        const current = map.get(monthName) || 0
+        map.set(monthName, current + Math.abs(t.amount))
+      })
+
+    return map
   }
 
-  const monthsOrder = [
-  "janvier","février","mars","avril","mai","juin",
-  "juillet","août","septembre","octobre","novembre","décembre"
-];
-
-const sortedMonthlyExpenses = Array.from(groupTransactionsByMonth(transactions))
-  .sort((a, b) => monthsOrder.indexOf(a[0]) - monthsOrder.indexOf(b[0]));
-
-  type Transaction = {
-  id: string
-  amount: number
-  transaction_date: string
-  category_id?: string
-  budget_categories?: { name: string }
-  accounts?: { name: string }
-  description: string
-}
-
-function groupTransactionsByMonth(transactions: Transaction[]) {
-  const map = new Map<string, number>()
-
-  transactions
-    .filter((t) => {return t.amount < 0})
-    .forEach(t => {
+  const currentMonthExpenses = transactions
+    .filter(t => {
       const date = new Date(t.transaction_date)
-      const monthNamesFR = [
-      "janvier", "février", "mars", "avril", "mai", "juin",
-      "juillet", "août", "septembre", "octobre", "novembre", "décembre"
-      ];
-      const monthName = monthNamesFR[date.getMonth()];      
-      const current = map.get(monthName) || 0
-      map.set(monthName, current + Math.abs(t.amount))
+      return t.amount < 0 && date.getMonth() === currentMonth && date.getFullYear() === currentYear
     })
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0)
 
-  return map
-}
-// get this month sum of expenses
-const currentMonthExpenses = transactions
-  .filter(t => {
+  const pastMonthExpenses = transactions
+    .filter(t => {
+      const date = new Date(t.transaction_date)
+      return t.amount < 0 && date.getMonth() === currentMonth - 1 && date.getFullYear() === currentYear
+    })
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+
+  const monthlyChange = pastMonthExpenses === 0 ? NaN : Math.round(((currentMonthExpenses - pastMonthExpenses) / pastMonthExpenses) * 100);
+
+  const monthName =
+    transactions.length > 0
+      ? new Date(transactions[0].transaction_date).toLocaleString("fr-FR", { month: "long" })
+      : "Mois"
+
+  const filteredTransactions = transactions.filter((t) => {
     const date = new Date(t.transaction_date)
-    return t.amount < 0 && date.getMonth() === currentMonth && date.getFullYear() === currentYear
+    return date.getMonth() === currentMonth && date.getFullYear() === currentYear
   })
-  .reduce((sum, t) => sum + Math.abs(t.amount), 0)
 
-  // get past month sum of expenses
-const pastMonthExpenses = transactions
-  .filter(t => {
-    const date = new Date(t.transaction_date)
-    return t.amount < 0 && date.getMonth() === currentMonth-1 && date.getFullYear() === currentYear
-  })
-  .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+  const expenseHistory = filteredTransactions
+    .filter((t) => t.amount < 0)
+    .reduce((acc, t) => {
+      const day = new Date(t.transaction_date).getDate()
+      const dateStr = day.toString()
+      const existing = acc.find((e: any) => e.date === dateStr)
 
-const monthlyChange = pastMonthExpenses === 0 ? NaN : Math.round(((currentMonthExpenses - pastMonthExpenses) / pastMonthExpenses) * 100);
+      if (existing) {
+        existing.spent += Math.abs(t.amount)
+      } else {
+        acc.push({ date: dateStr, spent: Math.abs(t.amount) })
+      }
+      return acc
+    }, [] as { date: string; spent: number }[])
+    .sort((a: any, b: any) => Number(a.date) - Number(b.date))
 
-
-// Get month name for the card title
-const monthName =
-  transactions.length > 0
-    ? new Date(transactions[0].transaction_date).toLocaleString("fr-FR", { month: "long" })
-    : "Mois"
-
-
-const filteredTransactions = transactions.filter((t) => {
-  const date = new Date(t.transaction_date)
-  return date.getMonth() === currentMonth && date.getFullYear() === currentYear
-})
-
-// Group expenses by day uniquement sur les transactions du mois courant
-const expenseHistory = filteredTransactions
-  .filter((t) => t.amount < 0)
-  .reduce((acc, t) => {
-    const day = new Date(t.transaction_date).getDate()
-    const dateStr = day.toString()
-    const existing = acc.find((e) => e.date === dateStr)
-
-    if (existing) {
-      existing.spent += Math.abs(t.amount)
-    } else {
-      acc.push({ date: dateStr, spent: Math.abs(t.amount) })
-    }
-    return acc
-  }, [] as { date: string; spent: number }[])
-  .sort((a, b) => Number(a.date) - Number(b.date))
-
-// Sort days in ascending order
-expenseHistory.sort((a:any, b:any) => Number(a.date) - Number(b.date))
-
-// Prepare budget data
-const budgetData = budgetCategories.map((cat) => ({
-  category: cat.name,
-  budget: cat.budget_amount || 0,
-  spent: transactions
-    .filter((t) => t.category_id === cat.id && t.amount < 0)
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0),
-}))
-
+  const budgetData = budgetCategories.map((cat:any) => ({
+    category: cat.name,
+    budget: cat.budget_amount || 0,
+    spent: transactions
+      .filter((t) => t.category_id === cat.id && t.amount < 0)
+      .reduce((sum, t) => sum + Math.abs(t.amount), 0),
+  }))
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+    <ThemeProvider attribute="class" enableSystem>
     <div className="min-h-screen bg-background text-foreground text-background">
       {/* Header */}
       <header className="bg-card border-b border-border">
@@ -203,6 +203,10 @@ const budgetData = budgetCategories.map((cat) => ({
               <Link href="/task" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
                 Habitudes
               </Link>
+              <Link href="/notes" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
+                notes
+              </Link>
+              
             </nav>
             <Link href="/expenses">
               <Button size="sm" className="bg-background text-white hover:bg-gray-800">
@@ -213,8 +217,7 @@ const budgetData = budgetCategories.map((cat) => ({
           </div>
         </div>
       </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lcp-optimize">
         {/* Net Worth Overview */}
         <div className="mb-8">
           <Card className="border-0 shadow-sm">
@@ -246,7 +249,12 @@ const budgetData = budgetCategories.map((cat) => ({
           </Card>
         </div>
         {/* Financial Charts */}
-        <ExpenseHistoryChart expenseHistory={expenseHistory} budgetData={budgetData} monthName={monthName}/>
+        <ExpenseHistoryChart 
+          expenseHistory={expenseHistory} 
+          budgetData={budgetData} 
+          monthName={monthName}
+          transactions={transactions}
+        />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           {/* Recent Transactions */}
           <div className="flex-1">
@@ -331,8 +339,7 @@ const budgetData = budgetCategories.map((cat) => ({
                           const monthName = new Date(t.transaction_date).toLocaleString("fr-FR", { month: "long" })
                           map.set(monthName, (map.get(monthName) || 0) + t.amount)
                           return map
-                        }, new Map<string, number>())
-                    ).map(([month, amount]) => (
+                        }, new Map<string, number>())as [string, number][]).map(([month, amount]) => (
                       <tr key={month} className="hover:bg-gray-800">
                         <td className="py-2 px-4 text-sm text-foreground">{month}</td>
                         <td className="py-2 px-4 text-sm text-foreground">{formatCurrency(amount)}</td>
@@ -347,7 +354,7 @@ const budgetData = budgetCategories.map((cat) => ({
         {/* Quick Actions */}
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-foreground mb-4">Actions rapides</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Link href="/budget">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 text-center">
@@ -372,18 +379,26 @@ const budgetData = budgetCategories.map((cat) => ({
                 </CardContent>
               </Card>
             </Link>
-            <Link href="/accounts">
+            <Link href="/task">
               <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-4 text-center">
-                  <Wallet className="h-8 w-8 mx-auto mb-2 text-foreground" />
-                  <p className="font-medium text-foreground">Ajouter compte</p>
+                  <CheckCircle className="h-8 w-8 mx-auto mb-2 text-foreground" />
+                  <p className="font-medium text-foreground">Ajouter habitude</p>
+                </CardContent>
+              </Card>
+            </Link>
+            <Link href="/notes">
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                <CardContent className="p-4 text-center">
+                  <FileText className="h-8 w-8 mx-auto mb-2 text-foreground" />
+                  <p className="font-medium text-foreground">Ajouter note</p>
                 </CardContent>
               </Card>
             </Link>
           </div>
         </div>
       </main>
-    </div>
+    </div> 
     </ThemeProvider>
   )
 }

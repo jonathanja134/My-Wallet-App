@@ -1,36 +1,88 @@
 "use server"
 
-import { supabase } from "@/lib/supabase"
 import { revalidatePath } from "next/cache"
-import { Transaction } from "@/app/types/transaction"
+import { Transaction } from "@/lib/supabase"
+import { createClient } from "@/lib/supabaseServer"
 
-const USER_ID = "550e8400-e29b-41d4-a716-446655440000" // Demo user ID
 
-export async function searchTransactions(query: string): Promise<Transaction[]> {
-  const all = await getTransactions() // récupère toutes les transactions
-  return all.data?.filter(t =>
-    t.description.toLowerCase().includes(query.toLowerCase())
-  ) || []
-}
+export async function getTransactions() {
+  const supabase = await createClient()
 
-export async function getTransactions(): Promise<{ data?: Transaction[]; error?: string }> {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { error: "Non authentifié" }
+  }
+
   const { data, error } = await supabase
     .from("transactions")
     .select(`
       *,
-      accounts(id, name),
-      budget_categories(id, name)
+      accounts(name, type),
+      budget_categories(name, color)
     `)
-    .eq("user_id", USER_ID)
+    .eq("user_id", user.id)
     .order("transaction_date", { ascending: false })
-    .limit(50)
 
-  if (error) return { error: error.message }
+
+  if (error) {
+    return { error: error.message }
+  }
 
   return { data }
 }
 
+
+// Search transactions by description
+export async function searchTransactions(query: string): Promise<Transaction[]> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    console.error("Utilisateur non authentifié:", authError)
+    return [] // always return an array to match the Promise<Transaction[]> type
+  }
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select(`
+      *,
+      accounts(name, type),
+      budget_categories(name, color)
+    `)
+    .eq("user_id", user.id)
+    .order("transaction_date", { ascending: false })
+
+  if (error) {
+    console.error("Erreur lors de la récupération des transactions:", error)
+    return []
+  }
+
+  // Defensive check: ensure description exists
+  return (data || []).filter(t =>
+    t.description?.toLowerCase().includes(query.toLowerCase())
+  )
+}
+
+// Create a new transaction
 export async function createTransaction(formData: FormData) {
+  const supabase = await createClient()
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { error: "Non authentifié" }
+  }
+
   const description = formData.get("description") as string
   const amount = Number.parseFloat(formData.get("amount") as string)
   const account_id = formData.get("account_id") as string
@@ -46,10 +98,10 @@ export async function createTransaction(formData: FormData) {
     .from("transactions")
     .insert([
       {
-        user_id: USER_ID,
+        user_id: user.id,
         description,
         amount,
-        account_id,
+        account_id: account_id || null,
         category_id: category_id || null,
         transaction_date,
         is_recurring,
@@ -57,13 +109,16 @@ export async function createTransaction(formData: FormData) {
     ])
     .select()
 
-  if (error) return { error: error.message }
+  if (error) {
+    return { error: error.message }
+  }
 
   // Update account balance
   const { data: account } = await supabase
     .from("accounts")
     .select("balance")
     .eq("id", account_id)
+    .eq("user_id", user.id)
     .single()
 
   if (account) {
@@ -75,6 +130,7 @@ export async function createTransaction(formData: FormData) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", account_id)
+      .eq("user_id", user.id)
 
     // Record balance history
     await supabase.from("account_history").insert([
@@ -90,12 +146,24 @@ export async function createTransaction(formData: FormData) {
   return { success: true, data }
 }
 
+// Delete a transaction
 export async function deleteTransaction(id: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { error: "Non authentifié" }
+  }
+
   // Get transaction details first
   const { data: transaction } = await supabase
     .from("transactions")
     .select("amount, account_id")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single()
 
   if (transaction) {
@@ -104,6 +172,7 @@ export async function deleteTransaction(id: string) {
       .from("accounts")
       .select("balance")
       .eq("id", transaction.account_id)
+      .eq("user_id", user.id)
       .single()
 
     if (account) {
@@ -115,16 +184,15 @@ export async function deleteTransaction(id: string) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", transaction.account_id)
+        .eq("user_id", user.id)
     }
   }
 
-  const { error } = await supabase
-    .from("transactions")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", USER_ID)
+  const { error } = await supabase.from("transactions").delete().eq("id", id).eq("user_id", user.id)
 
-  if (error) return { error: error.message }
+  if (error) {
+    return { error: error.message }
+  }
 
   revalidatePath("/expenses")
   revalidatePath("/")

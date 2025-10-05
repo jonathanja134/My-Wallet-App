@@ -1,32 +1,21 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient, SupabaseClient } from "@supabase/supabase-js"
+import type { User } from "@supabase/supabase-js"
+export type { User }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase: SupabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-
-export interface Habit {
-  id: string
-  user_id: string
-  name: string
-  description?: string
-  category: string
-  color: string
-  progress: boolean[]
-  created_at: string
-  updated_at: string
-}
-
-
-// Types for our database
-export interface User {
+export interface DbUser {
   id: string
   email: string
   full_name?: string
   created_at: string
   updated_at: string
 }
+
+// Types for our database
 
 export interface Account {
   id: string
@@ -51,8 +40,6 @@ export interface BudgetCategory {
   updated_at: string
 }
 
-
-
 export interface Goal {
   id: string
   user_id: string
@@ -71,4 +58,92 @@ export interface AccountHistory {
   account_id: string
   balance: number
   recorded_at: string
+}
+
+export interface Habit {
+  id: string
+  user_id: string
+  name: string
+  description?: string
+  category: string
+  color: string
+  created_at: string
+  updated_at: string
+  progress: { [key: string]: boolean[] }
+}
+
+export interface HabitProgress {
+  id: string
+  habit_id: string
+  month: number
+  year: number
+  progress: boolean[]
+  created_at: string
+  updated_at: string
+}
+
+export interface Note {
+  id: string
+  user_id: string
+  title: string
+  content: string
+  category: string
+  color: string
+  tags?: string[]
+  is_pinned: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Transaction {
+  id: string
+  user_id: string
+  account_id: string
+  category_id?: string
+  description: string
+  amount: number
+  transaction_date: string
+  is_recurring: boolean
+  created_at: string
+  updated_at: string
+  accounts?: {
+    name: string
+    type: string
+  }
+  budget_categories?: {
+    name: string
+    color: string
+  }
+}
+
+
+export interface ExpensesClientProps {
+  initialTransactions: Transaction[]
+  session: Session | null
+}
+
+export interface Session {
+  access_token: string
+  user: {
+    id: string
+    email?: string
+  }
+}
+
+export interface BudgetItem {
+  category: string
+  budget: number
+  spent: number
+}
+
+export interface ExpenseHistoryChartProps {
+  expenseHistory: Array<{
+    amount: number
+    day: string
+    transaction_date: string 
+    date: string; 
+    spent: number 
+}>
+  budgetData: BudgetItem[]
+  monthName: string
 }

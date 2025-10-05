@@ -1,16 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { ChevronLeft, ChevronRight, Calendar, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar, Trash2, Flame } from "lucide-react"
 import { toggleHabitDay, deleteHabit } from "@/app/actions/habits"
 import type { Habit } from "@/lib/supabase"
-
-import { Flame } from "lucide-react";
 
 interface HabitsTrackerProps {
   habits: Habit[]
@@ -19,89 +17,78 @@ interface HabitsTrackerProps {
 export function HabitsTracker({ habits }: HabitsTrackerProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  const [habitProgress, setHabitProgress] = useState<{ [key: string]: boolean[] }>({})
+  const [habitProgress, setHabitProgress] = useState(() => {
+    const initial: Record<string, any> = {}
+    for (const habit of habits) {
+      initial[habit.id] = habit.progress || {}
+    }
+    return initial
+  })
 
   const months = [
-    "Janvier",
-    "Février",
-    "Mars",
-    "Avril",
-    "Mai",
-    "Juin",
-    "Juillet",
-    "Août",
-    "Septembre",
-    "Octobre",
-    "Novembre",
-    "Décembre",
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
   ]
 
-  const getDaysInMonth = (month: number, year: number) => {
-    return new Date(year, month + 1, 0).getDate()
-  }
+  const getDaysInMonth = (month: number, year: number) =>
+    new Date(year, month + 1, 0).getDate()
 
   const daysInMonth = getDaysInMonth(selectedMonth, selectedYear)
 
-  // Initialize habit progress
-  useEffect(() => {
-    const progress: { [key: string]: boolean[] } = {}
-    habits.forEach((habit) => {
-      // Initialize with stored progress or empty array
-      const storedProgress = habit.progress || []
-      progress[habit.id] = Array(31)
-        .fill(false)
-        .map((_, index) => (index < storedProgress.length ? storedProgress[index] : false))
-    })
-    setHabitProgress(progress)
-  }, [habits, selectedMonth, selectedYear])
-
+  // ✅ Handle toggling of a day
   const handleDayToggle = async (habitId: string, dayIndex: number) => {
-    const newProgress = { ...habitProgress }
-    if (!newProgress[habitId]) {
-      newProgress[habitId] = Array(31).fill(false)
+    const yearKey = String(selectedYear)
+    const monthKey = String(selectedMonth)
+    const days = getDaysInMonth(selectedMonth, selectedYear)
+
+    // clone previous state
+    const newProgress = structuredClone(habitProgress)
+    if (!newProgress[habitId]) newProgress[habitId] = {}
+    if (!newProgress[habitId][yearKey]) newProgress[habitId][yearKey] = {}
+    if (!newProgress[habitId][yearKey][monthKey]) {
+      newProgress[habitId][yearKey][monthKey] = Array(days).fill(false)
     }
-    newProgress[habitId][dayIndex] = !newProgress[habitId][dayIndex]
+
+    const current = newProgress[habitId][yearKey][monthKey][dayIndex]
+    newProgress[habitId][yearKey][monthKey][dayIndex] = !current
+
+    // update UI immediately
     setHabitProgress(newProgress)
 
-    // Update in database
-    await toggleHabitDay(habitId, dayIndex, newProgress[habitId][dayIndex])
+    // save change to backend
+    await toggleHabitDay(habitId, dayIndex, !current, selectedMonth, selectedYear)
   }
 
-const calculateStreak = (progress: boolean[]) => {
-  let maxStreak = 0
-  let currentStreak = 0
-  const monthProgress = progress.slice(0, daysInMonth)
-  for (let i = 0; i < monthProgress.length; i++) {
-    if (monthProgress[i]) {
-      currentStreak++
-      if (currentStreak > maxStreak) maxStreak = currentStreak
-    } else {
-      currentStreak = 0
+  const calculateStreak = (progress: boolean[]) => {
+    let maxStreak = 0
+    let currentStreak = 0
+    for (let i = 0; i < progress.length; i++) {
+      if (progress[i]) {
+        currentStreak++
+        maxStreak = Math.max(maxStreak, currentStreak)
+      } else {
+        currentStreak = 0
+      }
     }
+    return maxStreak
   }
-  return maxStreak
-}
 
   const calculateMonthlyProgress = (progress: boolean[]) => {
-    const completedDays = progress.slice(0, daysInMonth).filter(Boolean).length
-    return Math.round((completedDays / daysInMonth) * 100)
+    const completed = progress.filter(Boolean).length
+    return Math.round((completed / progress.length) * 100)
   }
 
-  const navigateMonth = (direction: "prev" | "next") => {
-    if (direction === "prev") {
+  const navigateMonth = (dir: "prev" | "next") => {
+    if (dir === "prev") {
       if (selectedMonth === 0) {
         setSelectedMonth(11)
         setSelectedYear(selectedYear - 1)
-      } else {
-        setSelectedMonth(selectedMonth - 1)
-      }
+      } else setSelectedMonth(selectedMonth - 1)
     } else {
       if (selectedMonth === 11) {
         setSelectedMonth(0)
         setSelectedYear(selectedYear + 1)
-      } else {
-        setSelectedMonth(selectedMonth + 1)
-      }
+      } else setSelectedMonth(selectedMonth + 1)
     }
   }
 
@@ -113,7 +100,7 @@ const calculateStreak = (progress: boolean[]) => {
     <div className="space-y-6">
       {/* Month Navigation */}
       <Card className="border-0 shadow-sm bg-card">
-        <CardContent className="p-6  mb-4">
+        <CardContent className="p-6 mb-4">
           <div className="flex items-center justify-between mb-4">
             <Button variant="ghost" size="sm" onClick={() => navigateMonth("prev")}>
               <ChevronLeft className="h-4 w-4" />
@@ -121,30 +108,31 @@ const calculateStreak = (progress: boolean[]) => {
             <div className="flex items-center space-x-4">
               <Select
                 value={selectedMonth.toString()}
-                onValueChange={(value) => setSelectedMonth(Number.parseInt(value))}
+                onValueChange={(v) => setSelectedMonth(Number(v))}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {months.map((month, index) => (
-                    <SelectItem key={index} value={index.toString()}>
+                  {months.map((month, i) => (
+                    <SelectItem key={i} value={i.toString()}>
                       {month}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+
               <Select
                 value={selectedYear.toString()}
-                onValueChange={(value) => setSelectedYear(Number.parseInt(value))}
+                onValueChange={(v) => setSelectedYear(Number(v))}
               >
                 <SelectTrigger className="w-24">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (
+                    <SelectItem key={y} value={y.toString()}>
+                      {y}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -155,41 +143,40 @@ const calculateStreak = (progress: boolean[]) => {
             </Button>
           </div>
 
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-foreground">
-              {months[selectedMonth]} {selectedYear}
-            </h2>
-          </div>
+          <h2 className="text-center text-2xl font-bold text-foreground">
+            {months[selectedMonth]} {selectedYear}
+          </h2>
         </CardContent>
       </Card>
 
-      {/* Habits List */}
+      {/* Habits */}
       <div className="space-y-4">
-        {[...habits].sort((a, b) => a.name.localeCompare(b.name)).map((habit) => {
-          const progress = habitProgress[habit.id] || Array(31).fill(false)
-          const streak = calculateStreak(progress)
-          const monthlyProgress = calculateMonthlyProgress(progress)
+        {habits.map((habit) => {
+          const yearKey = String(selectedYear)
+          const monthKey = String(selectedMonth)
+          const monthProgress =
+            habitProgress[habit.id]?.[yearKey]?.[monthKey] || Array(daysInMonth).fill(false)
+
+          const streak = calculateStreak(monthProgress)
+          const monthlyProgress = calculateMonthlyProgress(monthProgress)
 
           return (
             <Card key={habit.id} className="border-0 shadow-sm">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: habit.color }}></div>
+                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: habit.color }} />
                     <div>
                       <CardTitle className="text-lg font-semibold">{habit.name}</CardTitle>
-                      <p className="hidden sm:block text-sm text-gray-500">
-                       {habit.description}
-                     </p>
+                      {habit.description && (
+                        <p className="text-sm text-gray-500">{habit.description}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Badge variant="secondary" className="flex items-center space-x-1">
-                      <span className="sm:hidden">{streak}</span>
                       <Flame className="w-4 h-4 text-red-500" />
-                      <span className="hidden sm:inline">
-                        {streak} jour{streak > 1 ? "s" : ""} de suite
-                      </span>
+                      <span>{streak} jour{streak > 1 ? "s" : ""} de suite</span>
                     </Badge>
                     <form action={handleDeleteHabit.bind(null, habit.id)}>
                       <Button variant="ghost" size="sm" type="submit">
@@ -199,88 +186,58 @@ const calculateStreak = (progress: boolean[]) => {
                   </div>
                 </div>
               </CardHeader>
+
               <CardContent>
-                <div className="space-y-4">
-                  {/* Progress Bar */}
-                  <div>
-                    <Progress value={monthlyProgress} className="h-2" />
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-500">Progression du mois</span>
+                    <span className="text-sm font-medium text-gray-900">{monthlyProgress}%</span>
                   </div>
+                  <Progress value={monthlyProgress} className="h-2" />
+                </div>
 
-                  {/* Daily Checkboxes */}
-                  <div className="flex flex-wrap gap-1 justify-start max-w-fit mx-auto">
-                    {Array.from({ length: daysInMonth }, (_, dayIndex) => {
-                      const isCompleted = progress[dayIndex]
-                      const isToday =
-                        new Date().getDate() === dayIndex + 1 &&
-                        new Date().getMonth() === selectedMonth &&
-                        new Date().getFullYear() === selectedYear
+                {/* Days Grid */}
+                <div className="flex flex-wrap gap-1 justify-start max-w-fit mx-auto">
+                  {Array.from({ length: daysInMonth }, (_, i) => {
+                    const isCompleted = monthProgress[i]
+                    const isToday =
+                      new Date().getDate() === i + 1 &&
+                      new Date().getMonth() === selectedMonth &&
+                      new Date().getFullYear() === selectedYear
 
-                      return (
-                        <button
-                          key={dayIndex}
-                          onClick={() => handleDayToggle(habit.id, dayIndex)}
-                          className={`
-                            w-8 h-8 rounded-lg border-2 transition-all duration-200 hover:scale-110
-                            ${
-                              isCompleted
-                                ? "border-green-500 bg-green-500 text-white"
-                                : " bg-background"
-                            }
-                            ${isToday ? "ring-0  ring-offset-2" : ""}
-                          `}
-                          title={`${dayIndex + 1} ${months[selectedMonth]} - ${isCompleted ? "Terminé" : "À faire"}`}
-                        >
-                        {dayIndex + 1}
-                          {isCompleted && (
-                              <path
-                                fillRule="evenodd"
-                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                clipRule="evenodd"
-                              />
-                          )}
-                        </button>
-                      )
-                    })}
-                    {/* Fill remaining slots for visual consistency */}
-                    {Array.from({ length: 31 - daysInMonth }, (_, i) => (
-                      <div key={`empty-${i}`} className="w-8 h-8"></div>
-                    ))}
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex flex-wrap justify-center gap-4 pt-2 border-t">
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-green-600">
-                        {progress.slice(0, daysInMonth).filter(Boolean).length}
-                      </p>
-                      <p className="text-xs text-gray-500">Jours réussis</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-blue-600">{streak}</p>
-                      <p className="text-xs text-gray-500">Série actuelle</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-purple-600">{monthlyProgress}%</p>
-                      <p className="text-xs text-gray-500">Taux de réussite</p>
-                    </div>
-                  </div>
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => handleDayToggle(habit.id, i)}
+                        className={`w-8 h-8 rounded-lg border-2 transition-all duration-200 hover:scale-110 ${
+                          isCompleted
+                            ? "border-green-500 bg-green-500 text-white"
+                            : "bg-background"
+                        } ${isToday ? "ring-2 ring-offset-2 ring-green-400" : ""}`}
+                        title={`${i + 1} ${months[selectedMonth]} - ${isCompleted ? "Terminé" : "À faire"}`}
+                      >
+                        {i + 1}
+                      </button>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
           )
         })}
-      </div>
 
-      {/* Empty State */}
-      {habits.length === 0 && (
-        <Card className="border-0 shadow-sm">
-          <CardContent className="p-12 text-center">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Aucune habitude</h3>
-            <p className="text-gray-500 mb-4">Commencez par ajouter votre première habitude à suivre</p>
-          </CardContent>
-        </Card>
-      )}
+        {/* Empty state */}
+        {habits.length === 0 && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-12 text-center">
+              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Aucune habitude</h3>
+              <p className="text-gray-500 mb-4">Ajoutez votre première habitude à suivre</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

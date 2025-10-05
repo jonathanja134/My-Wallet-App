@@ -10,12 +10,23 @@ import { EditBudgetDialog } from "@/components/edit-budget-dialog"
 import { getBudgetCategories, deleteBudgetCategory } from "@/app/actions/budget"
 import { getTransactions } from "@/app/actions/expenses"
 import { formatCurrency } from "@/lib/utils"
+import { ThemeProvider } from "next-themes"
 
 export default async function Budget() {
   const [budgetResult, transactionsResult] = await Promise.all([getBudgetCategories(), getTransactions()])
 
   const budgetCategories = budgetResult.data || []
-  const transactions = transactionsResult.data || []
+  let transactions = []
+  const allTransactions = transactionsResult.data || []
+      const now = new Date()
+      const currentMonth = now.getMonth()
+      const currentYear = now.getFullYear()
+
+      transactions = allTransactions.filter((t) => {
+        if (!t.transaction_date) return false
+        const date = new Date(t.transaction_date)
+        return date.getMonth() === currentMonth && date.getFullYear() === currentYear
+      })
 
   // Calculate spent amounts per category
   const categorySpending = budgetCategories.map((category) => {
@@ -55,6 +66,7 @@ export default async function Budget() {
   }
 
   return (
+    <ThemeProvider attribute="class" enableSystem>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card border-b border-border">
@@ -219,5 +231,6 @@ export default async function Budget() {
         </div>
       </main>
     </div>
+    </ThemeProvider>
   )
 }

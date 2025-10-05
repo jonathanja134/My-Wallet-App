@@ -2,23 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingUp, PieChart, Calendar, CalendarArrowUp, CalendarXIcon, CalendarClock } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts"
-import { Transaction } from "@/app/types/transaction"
+import { PieChart, CalendarClock } from "lucide-react"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts"
+import { Transaction } from "@/lib/supabase"
 import { getTransactions } from "@/app/actions/expenses"
-import { ReferenceLine } from "recharts"
-
-interface BudgetItem {
-  category: string
-  budget: number
-  spent: number
-}
-
-interface ExpenseHistoryChartProps {
-  expenseHistory: Array<{ date: string; spent: number }>
-  budgetData: BudgetItem[]
-  monthName: string
-}
+import { BudgetItem ,ExpenseHistoryChartProps} from "@/lib/supabase"
 
 function getExpensesByCategory(
   transactions: Transaction[],
@@ -26,7 +14,7 @@ function getExpensesByCategory(
   year?: number
 ) {
   return transactions
-    .filter((t) => t.amount < 0) // uniquement les dépenses
+    .filter((t) => t.amount < 0)
     .filter((t) => {
       if (month === undefined || year === undefined) return true
       const d = new Date(t.transaction_date)
@@ -34,7 +22,7 @@ function getExpensesByCategory(
     })
     .reduce((acc, t) => {
       const category = t.budget_categories?.name ?? "Autres"
-      const existing = acc.find((c: any) => c.category === category)
+      const existing = acc.find((c) => c.category === category)
       if (existing) {
         existing.total += Math.abs(t.amount)
       } else {
@@ -43,20 +31,68 @@ function getExpensesByCategory(
       return acc
     }, [] as { category: string; total: number }[])
 }
-
+function buildExpenseHistory(transactions: Transaction[]): ExpenseHistoryChartProps["expenseHistory"] {
+  const month = new Date().getMonth()
+  const year = new Date().getFullYear()
+  return transactions
+  .filter((t) => t.amount < 0)
+  .filter((t) => {
+    if (month === undefined || year === undefined) return true
+    const d = new Date(t.transaction_date)
+    return d.getMonth() === month && d.getFullYear() === year
+  })
+    .map(t => {
+      const dateObj = new Date(t.transaction_date)
+      const day = dateObj.getDate().toString() // day of month
+      return {
+        amount: t.amount,
+        day,
+        transaction_date: t.transaction_date,
+        date: day,
+        spent: Math.abs(t.amount),
+      }
+    })
+}
 export function ExpenseHistoryChart({
   expenseHistory = [],
   budgetData = [],
   monthName,
-}: ExpenseHistoryChartProps) {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  transactions = [],
+}: ExpenseHistoryChartProps & { transactions?: Transaction[] }) {
 
-  // Charger les transactions depuis Supabase
+  // Remove client-side data fetching - use props instead
+  const [isLoading, setIsLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  
+
+  // Fix hydration mismatch by ensuring client-side rendering
   useEffect(() => {
-    getTransactions().then((res) => {
-      if (res.data) setTransactions(res.data)
-    })
+    setMounted(true)
   }, [])
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="border-0 shadow-sm rounded-lg p-6">
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+              <p className="text-gray-500">Chargement...</p>
+            </div>
+          </div>
+        </div>
+        <div className="border-0 shadow-sm rounded-lg p-6">
+          <div className="h-[300px] w-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+              <p className="text-gray-500">Chargement...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const now = new Date()
   const expensesByCategory = getExpensesByCategory(
@@ -64,35 +100,63 @@ export function ExpenseHistoryChart({
     now.getMonth(),
     now.getFullYear()
   )
-  const expenseHistoryWithCumulative = expenseHistory
-  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  .map((item, index, arr) => {
-    const cumulativeSpent = arr
-      .slice(0, index + 1)
-      .reduce((sum, t) => sum + t.spent, 0)
-    
-    return { ...item, cumulativeSpent }
-  })
-  /* Limite budgétaire cumulée */
-const totalBudget = budgetData.reduce((sum, i) => sum + i.budget, 0)
 
-function plannedExpenses(day: number, totalBudget: number): number {
-    const T = new Date();
-    const daysInMonth = new Date(T.getFullYear(), T.getMonth() + 1, 0).getDate();
+  // Show loading state if no data
+  if (!transactions.length && !expenseHistory.length) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <CalendarClock className="h-5 w-5 mr-2" />
+              {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+                <p className="text-gray-500">Chargement des données...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold flex items-center">
+              <PieChart className="h-5 w-5 mr-2" />
+              Budget vs Dépenses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px] w-full flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
+                <p className="text-gray-500">Chargement des données...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
-    // Linear calculation: y = (totalBudget / daysInMonth) * day
-    const todayExpenses = (totalBudget / daysInMonth) * day;
+  const expenseHistoryWithCumulative = buildExpenseHistory(transactions)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .map((item, index, arr) => {
+      const cumulativeSpent = arr
+        .slice(0, index + 1)
+        .reduce((sum, t) => sum + t.spent, 0)
+      return { ...item, cumulativeSpent }
+    })
 
-    return todayExpenses;
-}
+  const totalBudget = budgetData.reduce((sum, i) => sum + i.budget, 0)
 
-const PlannedExpenseData = [];
-for (let day = 1; day <= 31; day++) {
-    PlannedExpenseData.push({
-        date: day.toString(),
-        planned: plannedExpenses(day, totalBudget)
-    });
-}
+  function plannedExpenses(day: number, totalBudget: number): number {
+    const T = new Date()
+    const daysInMonth = new Date(T.getFullYear(), T.getMonth() + 1, 0).getDate()
+    return (totalBudget / daysInMonth) * day
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -105,82 +169,82 @@ for (let day = 1; day <= 31; day++) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={expenseHistoryWithCumulative} margin={{ top: 10, right: 10, bottom: 10, left: -20 }}>
-                <XAxis dataKey="date" 
-                       axisLine={false} 
-                       tickLine={false} 
-                       domain={[0,31]}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  domain={[0, Math.max(totalBudget, ...expenseHistoryWithCumulative.map(d => d.cumulativeSpent))+10]}
-                />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload || !payload.length) return null;
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={expenseHistoryWithCumulative}
+                  margin={{ top: 10, right: 10, bottom: 10, left: -20 }}
+                >
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} domain={[0, 31]} />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    domain={[
+                      0,
+                      Math.max(
+                        ...expenseHistoryWithCumulative.map((d) => d.cumulativeSpent)
+                      ) + 10,
+                    ]}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload || !payload.length) return null
                       const day = label
-                    return (
-                      <div className="bg-background p-2 rounded shadow">
-                        {/* Bold day + month */}
-                        <p className="font-bold">{`${day} ${monthName}`}</p>
-                        {/* Values */}
-                        {payload.map((entry, index) => (
-                          <p key={index} style={{ color: entry.color }}>
-                            {entry.name}{` : `}{entry.value !== undefined ? entry.value.toLocaleString("fr-FR") + " €" : "-"}
-                          </p>
-                        ))}
-                      </div>
-                    );
-                  }}
-                />
-                {/* Limite budgétaire planifiée */}
-                <Line
-                  type="monotone"
-                  dataKey={(data) => {
-                    const day = parseInt(data.date, 10);
-                    const planned = plannedExpenses(day, totalBudget);
-                    return planned;
-                  }}
-                  strokeDasharray="5 5" 
-                  name="Limite planifiée"
-                  stroke="#ffeed4ba"
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                  dot={false}
-                />
-                {/* Dépenses journalières */}
-                <Line
-                  type="monotone"
-                  dataKey="spent"
-                  name="Montant journalier"
-                  stroke="#a200ffff"
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-                {/* Dépenses cumulées */}
-                <Line
-                  type="monotone"
-                  dataKey="cumulativeSpent"
-                  name="Cumulé"
-                  stroke="#ff9500ff"
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                  dot={false}
-                />
-                {/* limite cumulées */}
-                <ReferenceLine
-                  y={budgetData.reduce((sum, item) => sum + item.budget, 0)}
-                  stroke="#888888"
-                  strokeDasharray="5 5"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+                      return (
+                        <div className="bg-background p-2 rounded shadow">
+                          <p className="font-bold">{`${day} ${monthName}`}</p>
+                          {payload.map((entry, index) => (
+                            <p key={index} style={{ color: entry.color }}>
+                              {entry.name} :{" "}
+                              {entry.value !== undefined
+                                ? entry.value.toLocaleString("fr-FR") + " €"
+                                : "-"}
+                            </p>
+                          ))}
+                        </div>
+                      )
+                    }}
+                  />
+                  {/* Limite planifiée */}
+                  <Line
+                    type="monotone"
+                    dataKey={(data) => plannedExpenses(parseInt(data.date, 10), totalBudget)}
+                    strokeDasharray="5 5"
+                    name="Limite planifiée"
+                    stroke="#ffeed4ba"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    dot={false}
+                  />
+                  {/* Dépenses journalières */}
+                  <Line
+                    type="monotone"
+                    dataKey="spent"
+                    name="Montant journalier"
+                    stroke="#a200ffff"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                  {/* Dépenses cumulées */}
+                  <Line
+                    type="monotone"
+                    dataKey="cumulativeSpent"
+                    name="Cumulé"
+                    stroke="#ff9500ff"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    dot={false}
+                  />
+                  <ReferenceLine
+                    y={totalBudget}
+                    stroke="#888888"
+                    strokeDasharray="5 5"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
         </CardContent>
       </Card>
 
@@ -193,37 +257,41 @@ for (let day = 1; day <= 31; day++) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] w-full">
-            <div className="space-y-4">
-              {budgetData.slice(0, 5).map((item, index) => {
-                const categoryExpense = expensesByCategory.find((e:any) => e.category === item.category)
-                const spent = categoryExpense?.total ?? 0
-                const percentage = item.budget > 0 ? (spent / item.budget) * 100 : 0
-                return (
-                  <div key={index} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium">{item.category}</span>
-                      <span className="text-gray-500">
-                        {spent.toLocaleString("fr-FR")} / {item.budget.toLocaleString("fr-FR")} €
-                      </span>
+            <div className="h-[300px] w-full">
+              <div className="space-y-4">
+                {budgetData.slice(0, 5).map((item, index) => {
+                  const categoryExpense = expensesByCategory.find(
+                    (e: any) => e.category === item.category
+                  )
+                  const spent = categoryExpense?.total ?? 0
+                  const percentage =
+                    item.budget > 0 ? (spent / item.budget) * 100 : 0
+                  return (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">{item.category}</span>
+                        <span className="text-gray-500">
+                          {spent.toLocaleString("fr-FR")} /{" "}
+                          {item.budget.toLocaleString("fr-FR")} €
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all ${
+                            percentage > 100
+                              ? "bg-red-500"
+                              : percentage > 80
+                              ? "bg-yellow-500"
+                              : "bg-green-500"
+                          }`}
+                          style={{ width: `${Math.min(percentage, 100)}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all ${
-                          percentage > 100
-                            ? "bg-red-500"
-                            : percentage > 80
-                            ? "bg-yellow-500"
-                            : "bg-green-500"
-                        }`}
-                        style={{ width: `${Math.min(percentage, 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </div>
         </CardContent>
       </Card>
     </div>

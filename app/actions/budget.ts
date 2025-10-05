@@ -1,11 +1,19 @@
 "use server"
 
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabaseServer"
 import { revalidatePath } from "next/cache"
 
-const USER_ID = "550e8400-e29b-41d4-a716-446655440000" // Demo user ID
-
 export async function createBudgetCategory(formData: FormData) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { error: "Non authentifié" }
+  }
+
   const name = formData.get("name") as string
   const budget_amount = Number.parseFloat(formData.get("budget_amount") as string)
   const color = formData.get("color") as string
@@ -18,7 +26,7 @@ export async function createBudgetCategory(formData: FormData) {
     .from("budget_categories")
     .insert([
       {
-        user_id: USER_ID,
+        user_id: user.id,
         name,
         budget_amount,
         color: color || "#3B82F6",
@@ -35,6 +43,16 @@ export async function createBudgetCategory(formData: FormData) {
 }
 
 export async function updateBudgetCategory(id: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { error: "Non authentifié" }
+  }
+
   const name = formData.get("name") as string
   const budget_amount = Number.parseFloat(formData.get("budget_amount") as string)
   const color = formData.get("color") as string
@@ -48,7 +66,7 @@ export async function updateBudgetCategory(id: string, formData: FormData) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
-    .eq("user_id", USER_ID)
+    .eq("user_id", user.id)
     .select()
 
   if (error) {
@@ -60,7 +78,17 @@ export async function updateBudgetCategory(id: string, formData: FormData) {
 }
 
 export async function deleteBudgetCategory(id: string) {
-  const { error } = await supabase.from("budget_categories").delete().eq("id", id).eq("user_id", USER_ID)
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { error: "Non authentifié" }
+  }
+
+  const { error } = await supabase.from("budget_categories").delete().eq("id", id).eq("user_id", user.id)
 
   if (error) {
     return { error: error.message }
@@ -71,10 +99,20 @@ export async function deleteBudgetCategory(id: string) {
 }
 
 export async function getBudgetCategories() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { error: "Non authentifié", data: [] }
+  }
+
   const { data, error } = await supabase
     .from("budget_categories")
     .select("*")
-    .eq("user_id", USER_ID)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: true })
 
   if (error) {

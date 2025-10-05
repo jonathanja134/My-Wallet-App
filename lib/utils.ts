@@ -6,16 +6,12 @@ import { Sun, Moon } from "lucide-react"
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
-import type { Transaction } from "@/app/types/transaction"
+import type { Transaction } from "@/lib/supabase"
 
-export function getTotalExpenses(
-  transactions: Transaction[],
-  month?: number,   // 0 = Janvier, 11 = Décembre
-  year?: number
-) {
+export function getTotalExpenses(transactions: Transaction[], month?: number, year?: number) {
   return transactions
     .filter((t) => {
-      if (t.amount >= 0) return false // seulement dépenses (amount < 0)
+      if (t.amount >= 0) return false // only expenses
       if (month !== undefined && year !== undefined) {
         const date = new Date(t.transaction_date)
         return date.getMonth() === month && date.getFullYear() === year

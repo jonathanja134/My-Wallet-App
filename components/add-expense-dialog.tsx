@@ -17,14 +17,13 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Plus } from "lucide-react"
 import { createTransaction } from "@/app/actions/expenses"
 import type { Account, BudgetCategory } from "@/lib/supabase"
-import { getTransactions } from "@/app/actions/expenses"
 
 interface AddExpenseDialogProps {
   accounts: Account[]
   categories: BudgetCategory[]
 }
 
-export function AddExpenseDialog({ accounts, categories }: AddExpenseDialogProps) {
+export function AddExpenseDialog({ categories }: AddExpenseDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -43,7 +42,7 @@ export function AddExpenseDialog({ accounts, categories }: AddExpenseDialogProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="bg-background text-white hover:bg-gray-800">
+        <Button size="sm" className="bg-black text-white hover:bg-gray-800">
           <Plus className="h-4 w-4 mr-2" />
           Ajouter dépense
         </Button>
@@ -63,7 +62,6 @@ export function AddExpenseDialog({ accounts, categories }: AddExpenseDialogProps
             <Label htmlFor="amount">Montant (€)</Label>
             <Input id="amount" name="amount" type="number" step="0.01" placeholder="0.00" required />
           </div>
-
           <div className="space-y-2">
             <Label htmlFor="category_id">Catégorie</Label>
             <Select name="category_id">

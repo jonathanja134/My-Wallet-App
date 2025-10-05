@@ -1,0 +1,54 @@
+/* Critical CSS for LCP optimization */
+
+/* Prevent layout shifts */
+.lcp-optimize {
+  content-visibility: auto;
+  contain-intrinsic-size: 300px;
+}
+
+/* Optimize main content area */
+main {
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
+}
+
+/* Optimize font loading */
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+}
+
+/* Critical above-the-fold styles */
+.hero-section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Optimize images */
+img {
+  max-width: 100%;
+  height: auto;
+  loading: lazy;
+}
+
+/* Prevent FOUC */
+body {
+  visibility: hidden;
+}
+
+body.loaded {
+  visibility: visible;
+}
+
+/* Optimize animations */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

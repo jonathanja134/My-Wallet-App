@@ -9,9 +9,12 @@ import { AddGoalDialog } from "@/components/add-goal-dialog"
 import { AddSavingsDialog } from "@/components/add-savings-dialog"
 import { CustomizeSimulationDialog } from "@/components/customize-simulation-dialog"
 import { getGoals, deleteGoal } from "@/app/actions/goals"
+import { ThemeProvider } from "next-themes"
 
-export default async function Goals() {
-  const goalsResult = await getGoals()
+export const dynamic = "force-dynamic";
+
+export default async function Goals(token: string) {
+  const goalsResult = await getGoals(token)
   const goals = goalsResult.data || []
 
   const totalTargets = goals.reduce((sum, goal) => sum + goal.target_amount, 0)
@@ -20,7 +23,7 @@ export default async function Goals() {
 
   async function handleDeleteGoal(id: string) {
     "use server"
-    await deleteGoal(id)
+    await deleteGoal(id, token)
   }
 
   const getStatusBadge = (current: number, target: number, deadline?: string) => {
@@ -71,6 +74,7 @@ export default async function Goals() {
   }
 
   return (
+    <ThemeProvider attribute="class" enableSystem>
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-card border-b border-border">
@@ -254,5 +258,6 @@ export default async function Goals() {
         </div>
       </main>
     </div>
+    </ThemeProvider>
   )
 }

@@ -194,7 +194,7 @@ export function ExpenseHistoryChart({
                     value={selectedMonth.toString()}
                     onValueChange={(v) => setSelectedMonth(Number(v))}
                   >
-                    <SelectTrigger className="w-40">
+                    <SelectTrigger className="w-30">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

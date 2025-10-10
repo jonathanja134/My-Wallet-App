@@ -3,13 +3,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import {
-  TrendingUp,
   Wallet,
   PiggyBank,
   Target,
   CreditCard,
-  Building,
-  Coins,
   ArrowUpRight,
   ArrowDownRight,
   Plus,
@@ -17,7 +14,7 @@ import {
   FileText,
 } from "lucide-react"
 import Link from "next/link"
-import { getTotalExpenses, getTotalIncome,getTotalBudget } from "@/lib/utils"
+import { getTotalBudget } from "@/lib/utils"
 import { ThemeProvider } from "next-themes"
 import { formatCurrency } from "@/lib/utils"
 import { BlurredAmount } from "@/components/BlurredAmount"

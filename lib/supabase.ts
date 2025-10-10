@@ -139,9 +139,9 @@ export interface BudgetItem {
 export interface ExpenseHistoryChartProps {
   expenseHistory: Array<{
     amount: number
-    day: string
+    day: number
     transaction_date: string 
-    date: string; 
+    date: number; 
     spent: number 
 }>
   budgetData: BudgetItem[]

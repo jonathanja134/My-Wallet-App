@@ -10,31 +10,10 @@ import { BudgetItem ,ExpenseHistoryChartProps} from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Value } from "@radix-ui/react-select"
 
 
-function getExpensesByCategory(
-  transactions: Transaction[],
-  month?: number,
-  year?: number
-) {
-  return transactions
-    .filter((t) => t.amount < 0)
-    .filter((t) => {
-      if (month === undefined || year === undefined) return true
-      const d = new Date(t.transaction_date)
-      return d.getMonth() === month && d.getFullYear() === year
-    })
-    .reduce((acc, t) => {
-      const category = t.budget_categories?.name ?? "Autres"
-      const existing = acc.find((c) => c.category === category)
-      if (existing) {
-        existing.total += Math.abs(t.amount)
-      } else {
-        acc.push({ category, total: Math.abs(t.amount) })
-      }
-      return acc
-    }, [] as { category: string; total: number }[])
-}
+
 
 export function ExpenseHistoryChart({
   expenseHistory = [],
@@ -48,6 +27,28 @@ export function ExpenseHistoryChart({
 
   const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
 
+  function getExpensesByCategory(
+  transactions: Transaction[], selectedMonth?: number, selectedYear?: number
+) {
+  return transactions
+    .filter((t) => t.amount < 0)
+    .filter((t) => {
+      if (selectedMonth === undefined || selectedYear === undefined) return true
+      const d = new Date(t.transaction_date)
+      return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear
+    })
+    .reduce((acc, t) => {
+      const category = t.budget_categories?.name ?? "Autres"
+      const existing = acc.find((c) => c.category === category)
+      if (existing) {
+        existing.total += Math.abs(t.amount)
+      } else {
+        acc.push({ category, total: Math.abs(t.amount) })
+      }
+      return acc
+    }, [] as { category: string; total: number }[])
+}
+
   function buildExpenseHistory(transactions: Transaction[]): ExpenseHistoryChartProps["expenseHistory"] {
     
     return transactions
@@ -59,7 +60,7 @@ export function ExpenseHistoryChart({
     })
       .map(t => {
         const dateObj = new Date(t.transaction_date)
-        const day = dateObj.getDate().toString() // day of month
+        const day = dateObj.getDate()
         return {
           amount: t.amount,
           day,
@@ -171,11 +172,10 @@ export function ExpenseHistoryChart({
 
   const totalBudget = budgetData.reduce((sum, i) => sum + i.budget, 0)
 
-  function plannedExpenses(day: number, totalBudget: number): number {
-    const T = new Date()
-    const daysInMonth = new Date(T.getFullYear(), T.getMonth() + 1, 0).getDate()
-    return (totalBudget / daysInMonth) * day
-  }
+function plannedExpenses(day: number , totalBudget: number, selectedMonth: number, selectedYear: number) {
+  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate()
+  return (totalBudget / daysInMonth) * day
+}
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -253,7 +253,7 @@ export function ExpenseHistoryChart({
                       const day = label
                       return (
                         <div className="bg-background p-2 rounded shadow">
-                          <p className="font-bold">{`${day} ${monthName}`}</p>
+                          <p className="font-bold">{`${day} ${new Date(selectedYear, selectedMonth).toLocaleString("FR-fr", {month: "long"})}`}</p>
                           {payload.map((entry, index) => (
                             <p key={index} style={{ color: entry.color }}>
                               {entry.name} :{" "}
@@ -269,7 +269,7 @@ export function ExpenseHistoryChart({
                   {/* Limite planifiée */}
                   <Line
                     type="monotone"
-                    dataKey={(data) => plannedExpenses(parseInt(data.date, 10), totalBudget)}
+                    dataKey={(data) => plannedExpenses(parseInt(data.date, 10), totalBudget, selectedMonth, selectedYear)}
                     strokeDasharray="5 5"
                     name="Limite planifiée"
                     stroke="#ffeed4ba"

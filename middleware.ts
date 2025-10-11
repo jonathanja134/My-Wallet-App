@@ -75,16 +75,14 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
   // Protected routes
   const protectedPaths = ["/budget", "/expenses", "/goals", "/accounts", "/task", "/notes","/"]
   const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path))
-
+  
   // Redirect to login if accessing protected route without auth
   if (isProtectedPath && !user && request.nextUrl.pathname !== "/login") {
     return NextResponse.redirect(new URL("/login", request.url))
   }
-
   // Redirect to home if accessing login while authenticated
   if (request.nextUrl.pathname === "/login" && user) {
     return NextResponse.redirect(new URL("/", request.url))

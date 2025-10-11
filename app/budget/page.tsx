@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Wallet, ArrowLeft, AlertTriangle, CheckCircle, TrendingUp, Trash2, Plus } from "lucide-react"
+import { Wallet, ArrowLeft, AlertTriangle, CheckCircle, TrendingUp, Trash2, Plus, PieChart } from "lucide-react"
 import Link from "next/link"
 import { MobileNav } from "@/components/mobile-nav"
 import { AddBudgetDialog } from "@/components/add-budget-dialog"
@@ -11,6 +11,9 @@ import { getBudgetCategories, deleteBudgetCategory } from "@/app/actions/budget"
 import { getTransactions } from "@/app/actions/expenses"
 import { formatCurrency } from "@/lib/utils"
 import { ThemeProvider } from "next-themes"
+import { BudgetDonutChart } from "@/components/pie-budget-chart"
+import { getBudgetCategories as getBudgetCategoriesForChart } from "@/app/actions/budget"
+
 
 export default async function Budget() {
   const [budgetResult, transactionsResult] = await Promise.all([getBudgetCategories(), getTransactions()])
@@ -40,6 +43,15 @@ export default async function Budget() {
       spent,
     }
   })
+  // Calculate hypothetical totals
+const budgetResultForChart = await getBudgetCategoriesForChart()
+const categoriesTotalPerCategories = (budgetResultForChart.data || []).map((category:any, i:any) => ({
+  id: category.id,
+  name: category.name,
+  budget_amount: category.budget_amount,
+  spent: category.budget_amount, // ✅ set "spent" = max (budget)
+  color: ["#ff0000ff", "#f534f2ff", "#ac18deff", "#26b21cff", "#4caf50", "#2196f3"][i % 6],
+}))
 
   const totalBudget = categorySpending.reduce((sum, cat) => sum + cat.budget_amount, 0)
   const totalSpent = categorySpending.reduce((sum, cat) => sum + cat.spent, 0)
@@ -140,6 +152,10 @@ export default async function Budget() {
         </div>
 
         {/* Budget Categories */}
+        <div className="grid md:grid-cols-2 gap-6">
+       
+          <BudgetDonutChart categories={categoriesTotalPerCategories} pageName="budget" />
+      
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {categorySpending.map((category) => {
             const percentage =
@@ -199,6 +215,7 @@ export default async function Budget() {
               </Card>
             )
           })}
+        </div>
         </div>
 
         {/* Budget Tips */}

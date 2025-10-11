@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
+import { ReactNode } from 'react'
 import type { User } from "@supabase/supabase-js"
 export type { User }
 
@@ -146,4 +147,26 @@ export interface ExpenseHistoryChartProps {
 }>
   budgetData: BudgetItem[]
   monthName: string
+}
+
+export interface PieChartData {
+  category: string
+  total: number
+}
+
+export interface BudgetDonutChartProps {
+  categories: {
+    name: string
+    budget_amount: number
+    spent: number
+    color: string
+  }[]
+  pageName: string
+}
+
+export interface ThemeProviderProps {
+  children: ReactNode
+  attribute?: 'class' | 'data-theme'
+  enableSystem?: boolean
+  defaultTheme?: string
 }

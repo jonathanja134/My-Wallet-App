@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChart, CalendarClock } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts"
 import { Transaction } from "@/lib/supabase"
-import { getTransactions } from "@/app/actions/expenses"
 import { BudgetItem ,ExpenseHistoryChartProps} from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Value } from "@radix-ui/react-select"
+import {BudgetDonutChart} from "@/components/pie-budget-chart"
+import { getBudgetCategories } from "@/app/actions/budget"
 
 
 
@@ -67,6 +68,7 @@ export function ExpenseHistoryChart({
           transaction_date: t.transaction_date,
           date: day,
           spent: Math.abs(t.amount),
+          budgetData: []
         }
       })
   }
@@ -161,6 +163,22 @@ export function ExpenseHistoryChart({
     )
   }
 
+  const categorySpending = budgetData.map((b) => {
+    const expense = expensesByCategory.find((e) => e.category === b.category)
+    return {
+      name: b.category,
+      value: expense ? expense.total : 0,
+      budget: b.budget,
+      percentage: b.budget > 0 ? ((expense ? expense.total : 0) / b.budget) * 100 : 0,
+    }
+  })
+//get colors from the category index
+
+  function getColor(index: number) {
+    const colors = ["#ff0000ff", "#ff00eeff", "#c02cffff", "#29e038ff", "#4caf50", "#2196f3"]
+    return colors[index % colors.length]
+  }
+
   const expenseHistoryWithCumulative = buildExpenseHistory(transactions)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .map((item, index, arr) => {
@@ -170,7 +188,8 @@ export function ExpenseHistoryChart({
       return { ...item, cumulativeSpent }
     })
 
-  const totalBudget = budgetData.reduce((sum, i) => sum + i.budget, 0)
+  const totalBudget = budgetData.reduce((sum:any, i:any) => sum + i.budget, 0)
+  
 
 function plannedExpenses(day: number , totalBudget: number, selectedMonth: number, selectedYear: number) {
   const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate()
@@ -272,7 +291,7 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                     dataKey={(data) => plannedExpenses(parseInt(data.date, 10), totalBudget, selectedMonth, selectedYear)}
                     strokeDasharray="5 5"
                     name="Limite planifiée"
-                    stroke="#ffeed4ba"
+                    stroke="#9cb8ffba"
                     strokeWidth={3}
                     strokeLinecap="round"
                     dot={false}
@@ -282,7 +301,7 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                     type="monotone"
                     dataKey="spent"
                     name="Montant journalier"
-                    stroke="#a200ffff"
+                    stroke="#12229dff"
                     strokeWidth={3}
                     strokeLinecap="round"
                     dot={false}
@@ -293,14 +312,14 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                     type="monotone"
                     dataKey="cumulativeSpent"
                     name="Cumulé"
-                    stroke="#ff9500ff"
+                    stroke="#ffffffff"
                     strokeWidth={3}
                     strokeLinecap="round"
                     dot={false}
                   />
                   <ReferenceLine
                     y={totalBudget}
-                    stroke="#888888"
+                    stroke="#ff7373ff"
                     strokeDasharray="5 5"
                   />
                 </LineChart>
@@ -311,49 +330,16 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
 
       {/* Budget vs Dépenses */}
       <Card className="border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center">
-            <PieChart className="h-5 w-5 mr-2" />
-            Budget vs Dépenses
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-            <div className="h-[300px] w-full">
-              <div className="space-y-4">
-                {budgetData.slice(0, 5).map((item, index) => {
-                  const categoryExpense = expensesByCategory.find(
-                    (e: any) => e.category === item.category
-                  )
-                  const spent = categoryExpense?.total ?? 0
-                  const percentage =
-                    item.budget > 0 ? (spent / item.budget) * 100 : 0
-                  return (
-                    <div key={index} className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">{item.category}</span>
-                        <span className="text-gray-500">
-                          {spent.toLocaleString("fr-FR")} /{" "}
-                          {item.budget.toLocaleString("fr-FR")} €
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all ${
-                            percentage > 100
-                              ? "bg-red-500"
-                              : percentage > 80
-                              ? "bg-yellow-500"
-                              : "bg-green-500"
-                          }`}
-                          style={{ width: `${Math.min(percentage, 100)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-        </CardContent>
+        <BudgetDonutChart
+          categories={categorySpending.map((c, i) => ({
+            id: i.toString(),
+            name: c.name,
+            budget_amount: c.budget,
+            spent: c.value,
+            color: getColor(i),
+          }))}
+        pageName="home"
+        />
       </Card>
     </div>
   )

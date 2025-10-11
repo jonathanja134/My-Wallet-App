@@ -1,7 +1,5 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { useTheme } from "next-themes"
-import { Sun, Moon } from "lucide-react"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

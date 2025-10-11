@@ -243,7 +243,7 @@ export default async function Dashboard() {
         {/* Financial Charts */}
         <ExpenseHistoryChart 
           expenseHistory={expenseHistory} 
-          budgetData={budgetData} 
+          budgetData={budgetData}
           monthName={monthName}
           transactions={transactions}
         />

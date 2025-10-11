@@ -1,7 +1,7 @@
 "use client"
 import './css/globals.css'
 import './css/critical.css'
-import  ThemeProvider from '@/components/theme-provider'
+import  ThemeProvider from '@/components/theme-wrapper'
 import { useEffect, useState } from 'react'
 
 export default function RootLayout({

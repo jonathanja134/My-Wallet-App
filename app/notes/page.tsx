@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button"
-import { Wallet, ArrowLeft, Plus } from "lucide-react"
+import { Wallet } from "lucide-react"
 import Link from "next/link"
 import { MobileNav } from "@/components/mobile-nav"
 import { NotesGrid } from "@/components/notes-grid"

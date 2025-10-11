@@ -1,5 +1,3 @@
-// Simple in-memory cache for development
-// In production, use Redis or similar
 
 const cache = new Map<string, { data: any; timestamp: number }>()
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes

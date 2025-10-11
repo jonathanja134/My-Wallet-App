@@ -19,7 +19,6 @@ import { createTransaction } from "@/app/actions/expenses"
 import type { Account, BudgetCategory } from "@/lib/supabase"
 
 interface AddExpenseDialogProps {
-  accounts: Account[]
   categories: BudgetCategory[]
 }
 

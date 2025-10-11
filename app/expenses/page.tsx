@@ -21,9 +21,7 @@ import { MobileNav } from "@/components/mobile-nav"
 import { AddExpenseDialog } from "@/components/add-expense-dialog"
 import ExpensesClient from "./ExpensesClient"
 import { getTransactions, deleteTransaction } from "@/app/actions/expenses"
-import { getAccounts } from "@/app/actions/accounts"
 import { getBudgetCategories } from "@/app/actions/budget"
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { ThemeProvider } from "next-themes"
@@ -63,15 +61,14 @@ export default async function Expenses() {
 
   // Fetch data only if user is authenticated
   let transactions = []
-  let accounts = []
   let categories: any[] = []
 
   if (user) {
     try {
       // Optimize: Load essential data
-      const [transactionsResult, accountsResult, categoriesResult] = await Promise.all([
+
+      const [transactionsResult, categoriesResult] = await Promise.all([
         getTransactions(),
-        getAccounts(),
         getBudgetCategories()
       ])
 
@@ -86,8 +83,9 @@ export default async function Expenses() {
         const date = new Date(t.transaction_date)
         return date.getMonth() === currentMonth && date.getFullYear() === currentYear
       })
-      accounts = accountsResult.data || []
+      if (categoriesResult) {
       categories = categoriesResult.data || []
+    }
     } catch (error) {
       console.error("Error fetching data:", error)
     }
@@ -135,7 +133,7 @@ export default async function Expenses() {
               </Link>
 
             </nav>
-            {user && <AddExpenseDialog accounts={accounts} categories={categories} />}
+            {user && <AddExpenseDialog categories={categories} />}
 
           </div>
         </div>

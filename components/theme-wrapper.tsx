@@ -1,6 +1,24 @@
 'use client'
-import ThemeProvider from '@/components/theme-provider'
+import { ThemeProvider as NextThemesProvider } from 'next-themes'
+import { ThemeProviderProps } from '@/lib/supabase'
 import { ReactNode } from 'react'
+
+export default function ThemeProvider({
+  children,
+  attribute = 'class',
+  enableSystem = true,
+  defaultTheme = 'dark',
+}: ThemeProviderProps) {
+  return (
+    <NextThemesProvider
+      attribute={attribute}
+      enableSystem={enableSystem}
+      defaultTheme={defaultTheme}
+    >
+      {children}
+    </NextThemesProvider>
+  )
+}
 
 interface ThemeWrapperProps {
   children: ReactNode

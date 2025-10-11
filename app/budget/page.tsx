@@ -145,7 +145,6 @@ export default async function Budget() {
             const percentage =
               category.budget_amount > 0 ? Math.round((category.spent / category.budget_amount) * 100) : 0
             const remaining = category.budget_amount - category.spent
-
             return (
               <Card key={category.id} className="border-0 shadow-sm">
                 <CardHeader className="pb-4">

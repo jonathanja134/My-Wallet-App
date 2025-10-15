@@ -170,17 +170,17 @@ export default async function Dashboard() {
     <div className="min-h-screen bg-background text-foreground text-background">
       {/* Header */}
       <header className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <MobileNav />
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
                 <Wallet className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-xl font-semibold text-card-foreground">My Wallet</h1>
+              <h1 className="text-xl font-semibold whitespace-nowrap px-2 text-card-foreground">My Wallet</h1>
             </div>
             <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="font-semibold text-card-foreground">
+              <Link href="/" className="font-semibold flex whitespace-nowrap text-card-foreground">
                 Tableau de bord
               </Link>
               <Link href="/budget" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
@@ -209,7 +209,7 @@ export default async function Dashboard() {
           </div>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lcp-optimize">
+      <main className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lcp-optimize">
         {/* Net Worth Overview */}
         <div className="mb-8">
           <Card className="border-0 shadow-sm">

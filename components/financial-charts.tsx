@@ -51,27 +51,41 @@ export function ExpenseHistoryChart({
 }
 
   function buildExpenseHistory(transactions: Transaction[]): ExpenseHistoryChartProps["expenseHistory"] {
-    
-    return transactions
+  // Aggregate by day
+  const dayMap: { [day: number]: { amount: number; spent: number; date: number; transaction_date: string; budgetData: any[] } } = {}
+
+  transactions
     .filter((t) => t.amount < 0)
     .filter((t) => {
       if (selectedMonth === undefined || selectedYear === undefined) return true
       const d = new Date(t.transaction_date)
       return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear
     })
-      .map(t => {
-        const dateObj = new Date(t.transaction_date)
-        const day = dateObj.getDate()
-        return {
-          amount: t.amount,
-          day,
-          transaction_date: t.transaction_date,
+    .forEach((t) => {
+      const dateObj = new Date(t.transaction_date)
+      const day = dateObj.getDate()
+      if (!dayMap[day]) {
+        dayMap[day] = {
+          amount: 0,
+          spent: 0,
           date: day,
-          spent: Math.abs(t.amount),
+          transaction_date: t.transaction_date,
           budgetData: []
         }
-      })
-  }
+      }
+      dayMap[day].amount += t.amount
+      dayMap[day].spent += Math.abs(t.amount)
+      // Optionally, you can aggregate budgetData if needed
+    })
+
+  // Convert to array, add 'day' property, and sort by day
+  return Object.values(dayMap)
+    .map((item) => ({
+      ...item,
+      day: item.date, // Add 'day' property to match the expected type
+    }))
+    .sort((a, b) => a.date - b.date)
+}
 
   const navigateMonth = (dir: "prev" | "next") => {
     if (dir === "prev") {

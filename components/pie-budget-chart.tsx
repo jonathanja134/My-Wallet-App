@@ -2,8 +2,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, Legend } from "recharts"
-import { PieChartIcon } from "lucide-react"
+import { PieChartIcon, Variable } from "lucide-react"
 import { BudgetDonutChartProps } from "@/lib/supabase"
+import { Label } from "recharts"
+// import css
+import '@/app/css/globals.css'
 
 
 export function BudgetDonutChart({ categories, pageName }: BudgetDonutChartProps) {
@@ -37,19 +40,23 @@ export function BudgetDonutChart({ categories, pageName }: BudgetDonutChartProps
   }
 
   // Custom label for center of donut
-  const CenterLabel = () => (
-    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
-      <tspan x="50%" dy="-0.5em" className="text-2xl font-bold fill-foreground">
+  const renderCenterLabel = ({ viewBox }: any) => {
+  if (!viewBox || !("cx" in viewBox) || !("cy" in viewBox)) return null
+  const { cx, cy } = viewBox
+  return (
+    <text
+      x={cx}
+      y={cy}
+      textAnchor="middle"
+      dominantBaseline="middle"
+      fill="hsl(var(--foreground))"
+    >
+      <tspan x={cx} fontSize="28" fontWeight="700">
         {totalSpent.toLocaleString("fr-FR")} €
-      </tspan>
-      <tspan x="50%" dy="1.5em" className="text-sm fill-foreground">
-        / {totalBudget.toLocaleString("fr-FR")} €
-      </tspan>
-      <tspan x="50%" dy="1.2em" className="text-xs fill-foreground">
-        {totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0}% utilisé
       </tspan>
     </text>
   )
+}
 
   if (categories.length === 0) {
     return (
@@ -97,9 +104,9 @@ export function BudgetDonutChart({ categories, pageName }: BudgetDonutChartProps
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} className="hover:opacity-80 transition-opacity" />
                 ))}
+                <Label content={renderCenterLabel} position="center" />
               </Pie>
               <Tooltip content={<CustomTooltip />} />
-              <CenterLabel />
             </PieChart>
           </ResponsiveContainer>
         </div>)}
@@ -120,17 +127,29 @@ export function BudgetDonutChart({ categories, pageName }: BudgetDonutChartProps
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} className="hover:opacity-80 transition-opacity" />
                 ))}
+                {/* ✅ Center text here */}
+                <Label content={renderCenterLabel} position="center" />
               </Pie>
               <Tooltip content={<CustomTooltip />} />
-              <CenterLabel />
             </PieChart>
           </ResponsiveContainer>
         </div>)}
 
-        {/* Budget Status Bars */}
+        {/* Budget Status Bars */}         
         {pageName !== "budget" && (
-        <div className="mt-6 space-y-3">
-          {chartData.map((category, index) => (
+      <div className="mt-6 space-y-3">
+        {chartData.map((category, index) => {
+          // Determine the color based on percentage
+          let barColor = "";
+          if (category.percentage > 100) {
+            barColor = "bg-red-500";
+          } else if (category.percentage > 80) {
+            barColor = "bg-orange-500";
+          } else {
+            barColor = "bg-green-500";
+          }
+        
+          return (
             <div key={index} className="space-y-1">
               <div className="flex justify-between items-center text-sm">
                 <div className="flex items-center space-x-2">
@@ -143,23 +162,15 @@ export function BudgetDonutChart({ categories, pageName }: BudgetDonutChartProps
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className={`h-2 rounded-full transition-all ${
-                    category.percentage > 100
-                      ? "bg-red-500"
-                      : category.percentage > 80
-                        ? "bg-yellow-500"
-                        : "bg-green-500"
-                  }`}
-                  style={{
-                    width: `${Math.min(category.percentage, 100)}%`,
-                    backgroundColor: category.percentage <= 100 ? category.color : undefined,
-                  }}
+                  className={`h-2 rounded-full transition-all ${barColor}`}
+                  style={{ width: `${Math.min(category.percentage, 100)}%` }}
                 ></div>
               </div>
             </div>
-          ))}
-        </div>
-        )}
+          );
+        })}
+      </div>
+      )}
       </CardContent>
     </Card>
   )

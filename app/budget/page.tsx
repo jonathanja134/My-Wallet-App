@@ -82,7 +82,7 @@ const categoriesTotalPerCategories = (budgetResultForChart.data || []).map((cate
     <div className="min-h-screen bg-background">
        {/* Header */}
        <header className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
               <MobileNav />
@@ -117,7 +117,7 @@ const categoriesTotalPerCategories = (budgetResultForChart.data || []).map((cate
           </div>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Budget Overview */}
         <div className="mb-8">
           <Card className="border-0 shadow-sm">

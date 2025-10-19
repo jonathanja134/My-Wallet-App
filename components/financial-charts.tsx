@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState,useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChart, CalendarClock } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts"
@@ -25,8 +25,28 @@ export function ExpenseHistoryChart({
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-
+  // Create repeated months for infinite scroll
   const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+
+  const loopedMonths = [...months] // 3x loop
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+useEffect(() => {
+  const scrollToCurrentMonth = () => {
+    if (scrollRef.current) {
+      const monthEl = scrollRef.current.children[selectedMonth] as HTMLElement
+      if (monthEl) {
+        scrollRef.current.scrollTo({
+          left: monthEl.offsetLeft - scrollRef.current.clientWidth / 2 + monthEl.clientWidth / 2,
+          behavior: "smooth",
+        })
+      }
+    }
+  }
+
+  // Use requestAnimationFrame to ensure DOM is ready
+  requestAnimationFrame(scrollToCurrentMonth)
+}, [selectedMonth])
 
   function getExpensesByCategory(
   transactions: Transaction[], selectedMonth?: number, selectedYear?: number
@@ -77,7 +97,6 @@ export function ExpenseHistoryChart({
       dayMap[day].spent += Math.abs(t.amount)
       // Optionally, you can aggregate budgetData if needed
     })
-
   // Convert to array, add 'day' property, and sort by day
   return Object.values(dayMap)
     .map((item) => ({
@@ -87,19 +106,27 @@ export function ExpenseHistoryChart({
     .sort((a, b) => a.date - b.date)
 }
 
-  const navigateMonth = (dir: "prev" | "next") => {
-    if (dir === "prev") {
-      if (selectedMonth === 0) {
-        setSelectedMonth(11)
-        setSelectedYear(selectedYear - 1)
-      } else setSelectedMonth(selectedMonth - 1)
-    } else {
-      if (selectedMonth === 11) {
-        setSelectedMonth(0)
-        setSelectedYear(selectedYear + 1)
-      } else setSelectedMonth(selectedMonth + 1)
-    }
+const handleMonthClick = (index: number) => {
+  setSelectedMonth(index % 12)
+  if (scrollRef.current) {
+    const monthEl = scrollRef.current.children[index] as HTMLElement
+    scrollRef.current.scrollTo({
+      left: monthEl.offsetLeft - scrollRef.current.clientWidth / 2 + monthEl.clientWidth / 2,
+      behavior: "smooth",
+    })
   }
+}
+
+// Calculate possible expense ( budget - spent  ) daily
+function possibleExpenseDays(day: number, totalBudget: number, selectedMonth: number, selectedYear: number, transactions: Transaction[]) {
+  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate()
+  const spentSoFar = buildExpenseHistory(transactions)
+    .filter((t) => t.date <= day)
+    .reduce((sum, t) => sum + t.spent, 0)
+  const totalBudgetToDate = (totalBudget / daysInMonth) * day
+  const possibleExpense = (totalBudgetToDate - spentSoFar)
+  return possibleExpense > 0 ? possibleExpense : 0
+}
 
   // Remove client-side data fetching - use props instead
   const [mounted, setMounted] = useState(false)
@@ -217,49 +244,39 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
         <CardHeader>
           {/* Month Navigation */}
           <Card className="border-0 shadow-sm bg-card">
-            <CardContent className="p-6 mb-4">
-              <div className="flex items-center justify-between mb-4">
-                <Button variant="ghost" size="sm" onClick={() => navigateMonth("prev")}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="flex items-center space-x-4">
-                  <Select
-                    value={selectedMonth.toString()}
-                    onValueChange={(v) => setSelectedMonth(Number(v))}
+            <CardHeader>
+                <CardTitle className="text-lg font-semibold mb-2 flex items-center">
+                    <CalendarClock className="h-5 w-5 mr-2" />
+                    Sélection du mois
+                  </CardTitle>
+                  <div className="relative w-50 overflow-hidden">
+                  {/* Left Blur */}
+                  <div className="pointer-events-none absolute left-0 top-0 h-full w-20 bg-gradient-to-r from-card to-transparent z-50" />
+                  {/* Right Blur */}
+                  <div className="pointer-events-none absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-card to-transparent z-10" />
+
+                  <div
+                    className="flex space-x-2 overflow-x-auto scroll-smooth scrollbar-hide px-4 py-2 w-full"
+                    ref={scrollRef}
                   >
-                    <SelectTrigger className="w-30">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((month, i) => (
-                        <SelectItem key={i} value={i.toString()}>
-                          {month}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                    
-                  <Select
-                    value={selectedYear.toString()}
-                    onValueChange={(v) => setSelectedYear(Number(v))}
-                  >
-                    <SelectTrigger className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => (
-                        <SelectItem key={y} value={y.toString()}>
-                          {y}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {loopedMonths.map((month, index) => {
+                      const isSelected = index % 12 === selectedMonth
+                      return (
+                        <div
+                          key={index}
+                          onClick={() => handleMonthClick(index)}
+                          className={`
+                            flex items-center justify-center rounded-full px-4 py-2 cursor-pointer transition-all duration-300
+                            ${isSelected ? "bg-background text-foreground shadow-lg" : "bg-black-100 text-gray-700 hover:bg-background hover:text-foreground hover:animate-pulse "}
+                          `}
+                        >
+                          {month.charAt(0).toUpperCase() + month.slice(1)}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => navigateMonth("next")}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
+                </CardHeader>
           </Card>
         </CardHeader>
         <CardContent>
@@ -267,7 +284,7 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={expenseHistoryWithCumulative}
-                  margin={{ top: 10, right: 10, bottom: 10, left: -20 }}
+                  margin={{ top: 10, right: 20, bottom: 10, left:0 }}
                 >
                   <XAxis dataKey="date" axisLine={false} tickLine={false} domain={[0, 31]} />
                   <YAxis
@@ -286,7 +303,9 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                       const day = label
                       return (
                         <div className="bg-background p-2 rounded shadow">
-                          <p className="font-bold">{`${day} ${new Date(selectedYear, selectedMonth).toLocaleString("FR-fr", {month: "long"})}`}</p>
+                          <p className="font-bold flex justify-center items-center mb-2">
+                            {`${day} ${new Date(selectedYear, selectedMonth).toLocaleString("FR-fr", {month: "long"})}`}
+                          </p>
                           {payload.map((entry, index) => (
                             <p key={index} style={{ color: entry.color }}>
                               {entry.name} :{" "}
@@ -299,6 +318,7 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                       )
                     }}
                   />
+
                   {/* Limite planifiée */}
                   <Line
                     type="monotone"
@@ -310,17 +330,6 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                     strokeLinecap="round"
                     dot={false}
                   />
-                  {/* Dépenses journalières */}
-                  <Line
-                    type="monotone"
-                    dataKey="spent"
-                    name="Montant journalier"
-                    stroke="#12229dff"
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                    dot={false}
-                    activeDot={{ r: 4 }}
-                  />
                   {/* Dépenses cumulées */}
                   <Line
                     type="monotone"
@@ -330,6 +339,17 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                     strokeWidth={3}
                     strokeLinecap="round"
                     dot={false}
+                  />
+                  {/* Dépenses restante */}
+                  <Line
+                    type="monotone"
+                    dataKey={(data) => possibleExpenseDays(parseInt(data.date, 10), totalBudget, selectedMonth, selectedYear, transactions)}
+                    name="Dépenses restantes"
+                    stroke="#ff6a00ff"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    dot={false}
+                    activeDot={{ r: 4 }}
                   />
                   <ReferenceLine
                     y={totalBudget}

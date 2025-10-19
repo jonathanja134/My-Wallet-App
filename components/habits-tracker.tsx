@@ -108,8 +108,7 @@ export function HabitsTracker({ habits }: HabitsTrackerProps) {
             <div className="flex items-center space-x-4">
               <Select
                 value={selectedMonth.toString()}
-                onValueChange={(v) => setSelectedMonth(Number(v))}
-              >
+                onValueChange={(v) => setSelectedMonth(Number(v))}>
                 <SelectTrigger className="w-30">
                   <SelectValue />
                 </SelectTrigger>

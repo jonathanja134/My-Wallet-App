@@ -5,13 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChart, CalendarClock } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts"
 import { Transaction } from "@/lib/supabase"
-import { BudgetItem ,ExpenseHistoryChartProps} from "@/lib/supabase"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Value } from "@radix-ui/react-select"
+import {ExpenseHistoryChartProps} from "@/lib/supabase"
 import {BudgetDonutChart} from "@/components/pie-budget-chart"
-import { getBudgetCategories } from "@/app/actions/budget"
 
 
 
@@ -24,7 +19,7 @@ export function ExpenseHistoryChart({
 }: ExpenseHistoryChartProps & { transactions?: Transaction[] }) {
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedYear] = useState(new Date().getFullYear())
   // Create repeated months for infinite scroll
   const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
 

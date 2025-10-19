@@ -23,24 +23,17 @@ export function ExpenseHistoryChart({
   // Create repeated months for infinite scroll
   const months = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
 
-  const loopedMonths = [...months] // 3x loop
+  const loopedMonths = months ? [...months] : []
   const scrollRef = useRef<HTMLDivElement>(null)
 
 useEffect(() => {
-  const scrollToCurrentMonth = () => {
-    if (scrollRef.current) {
-      const monthEl = scrollRef.current.children[selectedMonth] as HTMLElement
-      if (monthEl) {
-        scrollRef.current.scrollTo({
-          left: monthEl.offsetLeft - scrollRef.current.clientWidth / 2 + monthEl.clientWidth / 2,
-          behavior: "smooth",
-        })
-      }
-    }
-  }
+  if (typeof window === "undefined") return // prevent SSR crash
+  if (!scrollRef.current) return
+  const monthEl = scrollRef.current.children[selectedMonth] as HTMLElement
+  if (!monthEl) return
 
-  // Use requestAnimationFrame to ensure DOM is ready
-  requestAnimationFrame(scrollToCurrentMonth)
+  const target = monthEl.offsetLeft - scrollRef.current.clientWidth / 2 + monthEl.clientWidth / 2
+  scrollRef.current.scrollTo({ left: target, behavior: "smooth" })
 }, [selectedMonth])
 
   function getExpensesByCategory(

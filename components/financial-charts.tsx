@@ -59,8 +59,18 @@ useEffect(() => {
 }
 
   function buildExpenseHistory(transactions: Transaction[]): ExpenseHistoryChartProps["expenseHistory"] {
-  // Aggregate by day
-  const dayMap: { [day: number]: { amount: number; spent: number; date: number; transaction_date: string; budgetData: any[] } } = {}
+  const today = new Date()
+  const currentMonth = today.getMonth()
+  const currentYear = today.getFullYear()
+  const currentDay = today.getDate()
+
+  const daysInSelectedMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate()
+  const daysToShow = selectedYear === currentYear && selectedMonth === currentMonth
+    ? currentDay
+    : daysInSelectedMonth
+
+  // Aggregate transactions by day
+  const dayMap: Record<number, { amount: number; spent: number; date: number; transaction_date?: string }> = {}
 
   transactions
     .filter((t) => t.amount < 0)
@@ -78,20 +88,26 @@ useEffect(() => {
           spent: 0,
           date: day,
           transaction_date: t.transaction_date,
-          budgetData: []
         }
       }
       dayMap[day].amount += t.amount
       dayMap[day].spent += Math.abs(t.amount)
-      // Optionally, you can aggregate budgetData if needed
     })
-  // Convert to array, add 'day' property, and sort by day
-  return Object.values(dayMap)
-    .map((item) => ({
-      ...item,
-      day: item.date, // Add 'day' property to match the expected type
-    }))
-    .sort((a, b) => a.date - b.date)
+
+  // Build an array containing every day from 1..daysToShow (missing days get zero)
+  const result: ExpenseHistoryChartProps["expenseHistory"] = []
+  for (let d = 1; d <= daysToShow; d++) {
+    const entry = dayMap[d]
+    result.push({
+      date: d, // numeric day
+      day: d,
+      amount: entry ? entry.amount : 0,
+      spent: entry ? entry.spent : 0,
+      transaction_date: entry ? entry.transaction_date || `${selectedYear}-${selectedMonth + 1}-${d}` : `${selectedYear}-${selectedMonth + 1}-${d}`,
+    } as any)
+  }
+
+  return result
 }
 
 const handleMonthClick = (index: number) => {
@@ -113,7 +129,7 @@ function possibleExpenseDays(day: number, totalBudget: number, selectedMonth: nu
     .reduce((sum, t) => sum + t.spent, 0)
   const totalBudgetToDate = (totalBudget / daysInMonth) * day
   const possibleExpense = (totalBudgetToDate - spentSoFar)
-  return possibleExpense > 0 ? possibleExpense : 0
+  return possibleExpense ? possibleExpense : 0
 }
 
   // Remove client-side data fetching - use props instead
@@ -209,13 +225,13 @@ function possibleExpenseDays(day: number, totalBudget: number, selectedMonth: nu
   }
 
   const expenseHistoryWithCumulative = buildExpenseHistory(transactions)
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .map((item, index, arr) => {
-      const cumulativeSpent = arr
-        .slice(0, index + 1)
-        .reduce((sum, t) => sum + t.spent, 0)
-      return { ...item, cumulativeSpent }
-    })
+  .sort((a, b) => a.date - b.date)
+  .map((item, index, arr) => {
+    const cumulativeSpent = arr
+      .slice(0, index + 1)
+      .reduce((sum, t) => sum + (t.spent || 0), 0)
+    return { ...item, cumulativeSpent }
+  })
 
   const totalBudget = budgetData.reduce((sum:any, i:any) => sum + i.budget, 0)
   
@@ -274,8 +290,10 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                   data={expenseHistoryWithCumulative}
                   margin={{ top: 10, right: 20, bottom: 10, left:0 }}
                 >
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} domain={[0, 31]} />
+                  /* axis rounded to two decimal places */
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} domain={[0, 31] } />
                   <YAxis
+                    tickFormatter={(value) => value.toFixed(0)}
                     axisLine={false}
                     tickLine={false}
                     domain={[
@@ -306,18 +324,6 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                       )
                     }}
                   />
-
-                  {/* Limite planifiée */}
-                  <Line
-                    type="monotone"
-                    dataKey={(data) => plannedExpenses(parseInt(data.date, 10), totalBudget, selectedMonth, selectedYear)}
-                    strokeDasharray="5 5"
-                    name="Limite planifiée"
-                    stroke="#9cb8ffba"
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                    dot={false}
-                  />
                   {/* Dépenses cumulées */}
                   <Line
                     type="monotone"
@@ -338,6 +344,17 @@ function plannedExpenses(day: number , totalBudget: number, selectedMonth: numbe
                     strokeLinecap="round"
                     dot={false}
                     activeDot={{ r: 4 }}
+                  />
+                  {/* Limite planifiée */}
+                  <Line
+                    type="monotone"
+                    dataKey={(data) => plannedExpenses(parseInt(data.date, 10), totalBudget, selectedMonth, selectedYear)}
+                    strokeDasharray="5 5"
+                    name="Limite planifiée"
+                    stroke="#9cb8ffba"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    dot={false}
                   />
                   <ReferenceLine
                     y={totalBudget}

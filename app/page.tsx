@@ -128,8 +128,19 @@ export default async function Dashboard() {
       return t.amount < 0 && date.getMonth() === currentMonth - 1 && date.getFullYear() === currentYear
     })
     .reduce((sum, t) => sum + Math.abs(t.amount), 0)
+// Calculate percentage change from past month to current month at the same day
+ const previousMonthDays = new Date(currentYear, currentMonth, 0).getDate()
+ const day = now.getDate() > previousMonthDays ? previousMonthDays : now.getDate()
+ const pastMonthExpensesToDate = transactions
+    .filter(t => {
+      const date = new Date(t.transaction_date)
+      return t.amount < 0 && date.getMonth() === currentMonth - 1 && date.getFullYear() === currentYear && date.getDate() <= day
+    })
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0)
 
-  const monthlyChange = pastMonthExpenses === 0 ? NaN : Math.round(((currentMonthExpenses - pastMonthExpenses) / pastMonthExpenses) * 100);
+
+
+  const monthlyChange = pastMonthExpensesToDate === 0 ? 0 : Math.round(((currentMonthExpenses - pastMonthExpensesToDate) / pastMonthExpensesToDate) * 100)
 
   const monthName =
     transactions.length > 0
@@ -220,11 +231,11 @@ export default async function Dashboard() {
                   <BlurredAmount totalExpenses={totalExpenses} totalBudget={totalBudget} />
                   <div className="flex items-center mt-2">
                     {monthlyChange > 0 ? (
-                      <ArrowUpRight className="h-4 w-4 text-green-500 mr-1" />
+                      <ArrowUpRight className="h-4 w-4 text-red-500 mr-1" />
                     ) : (
-                      <ArrowDownRight className="h-4 w-4 text-red-500 mr-1" />
+                      <ArrowDownRight className="h-4 w-4 text-green-500 mr-1" />
                     )}
-                    <span className={`text-sm font-medium ${monthlyChange > 0 ? "text-green-600" : "text-red-600"}`}>
+                    <span className={`text-sm font-medium ${monthlyChange > 0 ? "text-red-600" : "text-green-600"}`}>
                       {monthlyChange > 0 ? "+" : ""}
                       {monthlyChange}% ce mois
                     </span>

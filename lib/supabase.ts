@@ -139,11 +139,13 @@ export interface BudgetItem {
 
 export interface ExpenseHistoryChartProps {
   expenseHistory: Array<{
+    month: any
     amount: number
     day: number
     transaction_date: string 
     date: number; 
     spent: number 
+  allYear?: boolean
 }>
   budgetData: BudgetItem[]
   monthName: string

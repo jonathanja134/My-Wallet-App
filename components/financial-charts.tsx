@@ -17,9 +17,7 @@ export function ExpenseHistoryChart({
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedYear] = useState(new Date().getFullYear())
   const [showAllYear, setShowAllYear] = useState(false)
-  const months = [
-    "janvier", "février", "mars", "avril", "mai", "juin",
-    "juillet", "août", "septembre", "octobre", "novembre", "décembre"
+  const months = [ "janvier", "février", "mars", "avril", "mai", "juin","juillet", "août", "septembre", "octobre", "novembre", "décembre"
   ]
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -28,7 +26,7 @@ export function ExpenseHistoryChart({
     if (showAllYear) return
     if (typeof window === "undefined") return
     if (!scrollRef.current) return
-    const monthEl = scrollRef.current.children[selectedMonth + 1] as HTMLElement // +1 because button is first
+    const monthEl = scrollRef.current.children[selectedMonth - 1] as HTMLElement
     if (!monthEl) return
     const target = monthEl.offsetLeft - scrollRef.current.clientWidth / 2 + monthEl.clientWidth / 2
     scrollRef.current.scrollTo({ left: target, behavior: "smooth" })
@@ -137,6 +135,19 @@ export function ExpenseHistoryChart({
   // --- totalBudget must be available before computing derived fields
   const totalBudget = budgetData.reduce((sum: any, i: any) => sum + i.budget, 0)
 
+  // compute months from September -> today (used to scale year budgets)
+  const monthsFromSeptember = (() => {
+    const startMonth = 8 // September (0-based)
+    const todayLocal = new Date()
+    if (todayLocal.getFullYear() === selectedYear) {
+      return Math.max(0, todayLocal.getMonth() - startMonth + 1)
+    }
+    return 12 - startMonth
+  })()
+
+  // scaled total budget (monthly sum vs cumulative from September)
+  const scaledTotalBudget = showAllYear ? totalBudget * monthsFromSeptember : totalBudget
+
   // Precompute planned & possible values and cumulative spent to avoid using function signatures in `dataKey`
   const expenseHistoryWithCumulative = expenseHistoryRaw
     .map((item, index, arr) => {
@@ -144,10 +155,54 @@ export function ExpenseHistoryChart({
         .slice(0, index + 1)
         .reduce((sum, t) => sum + (t.spent || 0), 0)
 
+      // planned value (keeps your existing logic)
       const plannedValue = plannedExpenses(index, selectedMonth, selectedYear)
-      const possibleValue = !showAllYear
-        ? possibleExpenseDays(typeof item.day === "number" ? item.day : index + 1, totalBudget, selectedMonth, selectedYear, transactions)
-        : 0
+
+      // compute possibleValue for both month and year modes:
+      let possibleValue = 0
+      const monthlyBudget = totalBudget // sum of budgets per month
+
+      if (showAllYear) {
+        // cumulative budget from September 1st up to this entry minus spent so far
+        const startMonthLocal = 8 // September (0-based)
+        const entryMonth = typeof item.month === "number" ? item.month - 1 : selectedMonth
+        const entryDay = typeof item.day === "number" ? item.day : 1
+
+        const monthsUpToNow = entryMonth - startMonthLocal + 1
+        if (monthsUpToNow > 0) {
+          // total days from Sept 1 to this entry
+          let totalDays = 0
+          for (let m = startMonthLocal; m < entryMonth; m++) {
+            totalDays += new Date(selectedYear, m + 1, 0).getDate()
+          }
+          totalDays += entryDay
+
+          // total days in the full period (Sept..entryMonth inclusive)
+          let daysInPeriod = 0
+          for (let m = startMonthLocal; m <= entryMonth; m++) {
+            daysInPeriod += new Date(selectedYear, m + 1, 0).getDate()
+          }
+
+          if (daysInPeriod > 0) {
+            const budgetToDate = monthlyBudget * monthsUpToNow * (totalDays / daysInPeriod)
+            possibleValue = budgetToDate - cumulativeSpent
+          } else {
+            possibleValue = 0
+          }
+        } else {
+          possibleValue = 0
+        }
+      } else {
+        // month mode: budget to date (day) minus spent so far
+        const day = typeof item.day === "number" ? item.day : index + 1
+        const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate()
+        if (daysInMonth > 0) {
+          const budgetToDate = (monthlyBudget / daysInMonth) * day
+          possibleValue = budgetToDate - cumulativeSpent
+        } else {
+          possibleValue = 0
+        }
+      }
 
       return {
         ...item,
@@ -198,7 +253,7 @@ export function ExpenseHistoryChart({
   )
 
   // --- Calculate the number of months from September to now ---
-  const startMonth = 8 // September (0-based)
+  const startMonth = 8
   const today = new Date()
   const monthsSinceSeptember =
     today.getFullYear() === selectedYear
@@ -336,22 +391,22 @@ export function ExpenseHistoryChart({
               <CardTitle className="text-lg font-semibold mb-2 flex items-center">
                 <CalendarClock className="h-5 w-5 mr-2" />
                 Sélection du mois
+              </CardTitle>
+              </CardHeader>
+              <div className="flex relative w-50 overflow-hidden justify-end">
                 <button
-                    className={` ml-8 text-sm text-gray-500 z-10 px-4 py-2 rounded-full border ${showAllYear ? "bg-foreground text-background" : ""}`}
+                    className={` ml-4 h-10 mt-2 text-sm text-gray-500 px-4 py-2 rounded-full border ${showAllYear ? "bg-background text-background" : ""}`}
                     onClick={() => setShowAllYear((v) => !v)}
                     tabIndex={0}
                   >
                     {showAllYear ? "Mois" : "Total"}
-              </button>
-              </CardTitle>
-              </CardHeader>
-              
-              <div className="flex relative w-50 overflow-hidden justify-end">
+                </button>
                 {/* Left Blur */}
-                <div className="pointer-events-none absolute left-0 top-0 h-full w-60 bg-gradient-to-r from-card to-transparent z-50" />
+                <div className="pointer-events-none absolute left-20 top-0 h-full w-60 bg-gradient-to-r from-card to-transparent z-50" />
                 {/* Right Blur */}
                 <div className="pointer-events-none absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-card to-transparent z-10" />
                 <div className="flex space-x-2 overflow-x-auto scroll-smooth scrollbar-hide px-2 py-2 w-full" ref={scrollRef}>
+                  
                   {!showAllYear && months.map((month, index) => {
                     const isSelected = index === selectedMonth
                     return (
@@ -446,18 +501,17 @@ export function ExpenseHistoryChart({
                   dot={false}
                 />
                 {/* Dépenses restante */}
-                {!showAllYear && (
-                  <Line
-                    type="monotone"
-                    dataKey="possibleExpenses"
-                    name="Dépenses restantes"
-                    stroke="#ff6a00ff"
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                    dot={false}
-                    activeDot={{ r: 4 }}
-                  />
-                )}
+                <Line
+                  type="monotone"
+                  dataKey="possibleExpenses"
+                  name=  "Dépenses restantes"
+                  stroke="#ff6a00ff"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+
                 {/* Limite planifiée */}
                 <Line
                   type="monotone"
@@ -470,13 +524,11 @@ export function ExpenseHistoryChart({
                   dot={false}
                   connectNulls={true}
                 />
-                {!showAllYear && (
-                  <ReferenceLine
-                    y={totalBudget}
-                    stroke="#ff7373ff"
-                    strokeDasharray="5 5"
-                  />
-                )}
+                <ReferenceLine
+                  y={scaledTotalBudget}
+                  stroke="#ff7373ff"
+                  strokeDasharray="5 5"
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { Transaction } from "@/lib/supabase"
 import { createClient } from "@/lib/supabaseServer"
+import { supabase } from "@/lib/supabase"
 
 
 export async function getTransactions() {
@@ -197,4 +198,41 @@ export async function deleteTransaction(id: string) {
   revalidatePath("/expenses")
   revalidatePath("/")
   return { success: true }
+}
+
+// Add this export to allow updating an existing transaction.
+// Adjust the `supabase` import/path to match your project (common paths: "@/lib/supabase" or "@/lib/supabaseClient").
+export async function updateTransaction(
+  id: string,
+  payload: {
+    description?: string
+    amount?: number
+    category_id?: string
+    transaction_date?: string
+    is_recurring?: boolean
+  }
+) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return { success: false, error: "Non authentifié" }
+  }
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .update(payload)
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+
+  if (error) return { success: false, error: error.message }
+  if (!data || data.length === 0) return { success: false, error: "Transaction not found" }
+  
+  revalidatePath("/expenses")
+  revalidatePath("/")
+  return { success: true, data: data[0] }
 }

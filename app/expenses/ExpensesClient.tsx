@@ -17,11 +17,13 @@ import {
 } from "lucide-react"
 import { ExpensesClientProps, Session } from "@/lib/supabase"
 import { deleteTransaction } from "@/app/actions/expenses"
+import { EditExpenseInline } from "@/components/edit-expense-inline"
+import type { Transaction, BudgetCategory } from "@/lib/supabase"
 
 
 
-export default function ExpensesClient({ initialTransactions, user }: ExpensesClientProps) {
-  const [transactions, setTransactions] = useState(initialTransactions)
+export default function ExpensesClient({ initialTransactions, user, categories }: ExpensesClientProps) {
+  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions)
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -89,6 +91,12 @@ export default function ExpensesClient({ initialTransactions, user }: ExpensesCl
     await deleteTransaction(id)
   }
 
+  const handleTransactionUpdated = (updated: Transaction) => {
+    setTransactions((prev) =>
+      prev.map((t) => (t.id === updated.id ? updated : t))
+    )
+  }
+
   return (
     <div className="w-full">
       <CardHeader>
@@ -115,51 +123,20 @@ export default function ExpensesClient({ initialTransactions, user }: ExpensesCl
       <Card className="border-0 shadow-sm">
         <CardContent className="p-0">
           <div className="space-y-0">
-            {transactions.map((transaction) => {
-              const IconComponent = getTransactionIcon(transaction.budget_categories?.name || "Non catégorisé")
-              return (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between p-4 hover:bg-background transition-colors border-b border-border last:border-b-0"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-background rounded-lg flex items-center justify-center">
-                      <IconComponent className="h-5 w-5 text-gray-100" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-500">{transaction.description}</p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Badge className={getCategoryColor(transaction.budget_categories?.name || "Non catégorisé")}>
-                          {transaction.budget_categories?.name || "Non catégorisé"}
-                        </Badge>
-                        <span className="text-xs text-gray-500">{transaction.accounts?.name}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <div className="text-right">
-                      <p className={`font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-foreground"}`}>
-                        {transaction.amount > 0 ? "+" : ""}
-                        {transaction.amount.toLocaleString("fr-FR")} €
-                      </p>
-                      <div className="flex items-center text-xs text-gray-500 mt-1">
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {new Date(transaction.transaction_date).toLocaleDateString("fr-FR")}
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteTransaction(transaction.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-              )
-            })}
+            {transactions.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Aucune dépense ce mois</p>
+            ) : (
+              transactions
+                .sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())
+                .map((transaction) => (
+                  <EditExpenseInline
+                    key={transaction.id}
+                    transaction={transaction}
+                    categories={categories}
+                    onUpdated={handleTransactionUpdated}
+                  />
+                ))
+            )}
           </div>
         </CardContent>
       </Card>

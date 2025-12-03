@@ -121,6 +121,7 @@ export interface Transaction {
 export interface ExpensesClientProps {
   initialTransactions: Transaction[]
   user: User | null
+  categories: any[];
 }
 
 export interface Session {

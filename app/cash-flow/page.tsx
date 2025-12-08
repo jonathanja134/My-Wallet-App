@@ -96,7 +96,6 @@ export default async function CashFlowPage() {
             </CardContent>
           </Card>
         </div>
-
         {/* Sankey Diagram */}
         <div className="mb-8">
           <SankeyChart 

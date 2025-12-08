@@ -178,6 +178,7 @@ export interface SankeyNode {
   name: string
   color?: string
   monthlyAverage?: number
+  value?: number
 }
 
 export interface SankeyLink {
@@ -203,4 +204,15 @@ export interface SankeyChartProps {
   categories: CategoryData[]
   totalIncome: number
   totalExpenses: number
+}
+
+export interface ExtendedSankeyChartProps extends SankeyChartProps {
+  transactions?: Transaction[]
+}
+
+export interface SavedEntry {
+  type: 'revenue' | 'expense'
+  amount: string
+  label: string
+  id?: string
 }

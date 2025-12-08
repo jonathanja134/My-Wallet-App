@@ -461,7 +461,7 @@ export function SankeyChart({
 
     let expenseAggregatorIndex = nodes.length
     nodes.push({
-      name: "Dépenses",
+      name: "Budget",
       color: "#ef4444",
       monthlyAverage: 0,
       value: totalExpensesMonthly,
@@ -490,9 +490,9 @@ export function SankeyChart({
     })
 
     // Right column: Savings node
-    const savings = totalIncomeAverage + totalCustomRevenue - totalExpensesMonthly
+    const savings = 0
     let savingsIndex = -1
-    if (savings > 0) {
+    if (savings == 0) {
       savingsIndex = nodes.length
       nodes.push({
         name: "Économies",

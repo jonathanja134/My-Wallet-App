@@ -10,6 +10,7 @@ import { AddSavingsDialog } from "@/components/add-savings-dialog"
 import { CustomizeSimulationDialog } from "@/components/customize-simulation-dialog"
 import { getGoals, deleteGoal } from "@/app/actions/goals"
 import { ThemeProvider } from "next-themes"
+import { PageHeader } from "@/components/page-header"
 
 export const dynamic = "force-dynamic";
 
@@ -76,42 +77,8 @@ export default async function Goals(token: string) {
   return (
     <ThemeProvider attribute="class" enableSystem>
     <div className="min-h-screen bg-background">
- {/* Header */}
- <header className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <MobileNav />
-              <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-                <Wallet className="h-5 w-5 text-white" />
-              </div>
-              <h1 className="text-xl font-semibold text-card-foreground">My Wallet</h1>
-            </div>
-            <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                Tableau de bord
-              </Link>
-              <Link href="/budget" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                Budget
-              </Link>
-              <Link href="/expenses" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                Dépenses
-              </Link>
-              <Link href="/goals" className="font-semibold text-card-foreground hover:text-accent-foreground">
-                Objectifs
-              </Link>
-              <Link href="/task" className="font-semibold text-secondary-foreground hover:text-accent-foreground hover:bg-card">
-                Habitudes
-              </Link>
-              <Link href="/notes" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                notes
-              </Link>
-              
-            </nav>
-           <AddGoalDialog />
-          </div>
-        </div>
-      </header>
+      {/* Header */}
+      <PageHeader actionButton={<AddGoalDialog />} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Overview */}

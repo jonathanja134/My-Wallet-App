@@ -206,6 +206,9 @@ export default async function Dashboard() {
               <Link href="/task" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
                 Habitudes
               </Link>
+              <Link href="/cash-flow" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
+                Cash-flow
+              </Link>
               <Link href="/notes" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
                 notes
               </Link>

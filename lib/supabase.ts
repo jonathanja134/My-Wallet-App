@@ -173,3 +173,34 @@ export interface ThemeProviderProps {
   enableSystem?: boolean
   defaultTheme?: string
 }
+
+export interface SankeyNode {
+  name: string
+  color?: string
+  monthlyAverage?: number
+}
+
+export interface SankeyLink {
+  source: number
+  target: number
+  value: number
+}
+
+export interface SankeyDataPoint {
+  nodes: SankeyNode[]
+  links: SankeyLink[]
+}
+
+export interface CategoryData {
+  id: string
+  name: string
+  color: string
+  income: number
+  expenses: number
+}
+
+export interface SankeyChartProps {
+  categories: CategoryData[]
+  totalIncome: number
+  totalExpenses: number
+}

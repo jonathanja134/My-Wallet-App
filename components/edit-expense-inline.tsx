@@ -166,15 +166,18 @@ export function EditExpenseInline({ transaction, categories, onUpdated, onDelete
                 </label>
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center space-x-2 ml-4">
-            <Button size="sm" variant="outline" onClick={cancel} disabled={loading}>
+            <br/>
+            <Button className="w-1/2" size="sm" variant="outline" onClick={cancel} disabled={loading}>
               Annuler
             </Button>
-            <Button size="sm" onClick={save} disabled={loading}>
+            <Button className="w-1/2" size="sm" onClick={save} disabled={loading}>
               {loading ? "..." : "Enregistrer"}
             </Button>
+          </div>
+          
+
+          <div className="flex items-center space-x-2 ml-4">
+            
           </div>
         </>
       )}

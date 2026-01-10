@@ -7,6 +7,8 @@ import { Transaction, SankeyDataPoint, SankeyLink, SankeyNode, SankeyChartProps,
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trash2, Edit2, Plus, X } from "lucide-react"
+import { TrendingUp, TrendingDown, PiggyBank } from "lucide-react"
+
 
 
 const CustomNode = ({ x, y, width, height, payload, containerWidth }: any) => {
@@ -42,22 +44,8 @@ const CustomNode = ({ x, y, width, height, payload, containerWidth }: any) => {
         fill="#b4b4b4"
         fontSize="10"
       >
-        {payload.value?.toLocaleString("fr-FR")} €
+        {(Math.round(payload.value)).toLocaleString("fr-FR")} €
       </text>
-      {payload.monthlyAverage !== undefined && (
-        <text
-          x={isLeft ? x - 10 : x + width + 10}
-          y={y + height / 2 + 28}
-          textAnchor={isLeft ? "end" : "start"}
-          fill="#888888"
-          fontSize="9"
-        >
-          Moy: {payload.monthlyAverage?.toLocaleString("fr-FR", {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })} €/mois
-        </text>
-      )}
     </g>
   )
 }
@@ -156,38 +144,17 @@ const EntryList = ({ savedEntries, editingId, editEntry, setEditEntry, handleEdi
 
   const revenueEntries = savedEntries.filter((e: SavedEntry) => e.type === 'revenue')
   const expenseEntries = savedEntries.filter((e: SavedEntry) => e.type === 'expense')
+  const Entries = [...revenueEntries, ...expenseEntries]
 
   return (
-    <div className=" mt-6 space-y-4 gap-6">
+    <div className=" mt-6 space-y-4 gap-3">
       <div>
         <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">Transactions enregistrées</h4>
         
-        {revenueEntries.length > 0 && (
-          <div className="mb-3">
-            <p className="text-xs text-gray-500 font-medium mb-1.5 ">Revenus</p>
-            <div className="space-x-3 gap-2 grid grid-cols-2">
-              {revenueEntries.map((entry: SavedEntry) => (
-                <EntryItem
-                  key={entry.id}
-                  entry={entry}
-                  isEditing={editingId === entry.id}
-                  editEntry={editEntry}
-                  setEditEntry={setEditEntry}
-                  onEdit={() => handleEditEntry(entry)}
-                  onSave={handleSaveEdit}
-                  onCancel={handleCancelEdit}
-                  onDelete={() => handleDeleteEntry(entry.id)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {expenseEntries.length > 0 && (
+        {Entries.length > 0 && (
           <div>
-            <p className="text-xs text-gray-500 font-medium mb-1.5">Dépenses</p>
-            <div className="space-x-3 grid grid-cols-2 gap-2">
-              {expenseEntries.map((entry: SavedEntry) => (
+            <div className="grid grid-cols-3 gap-4 py-3.5">
+              {Entries.map((entry: SavedEntry) => (
                 <EntryItem
                   key={entry.id}
                   entry={entry}
@@ -197,9 +164,10 @@ const EntryList = ({ savedEntries, editingId, editEntry, setEditEntry, handleEdi
                   onEdit={() => handleEditEntry(entry)}
                   onSave={handleSaveEdit}
                   onCancel={handleCancelEdit}
-                  onDelete={() => handleDeleteEntry(entry.id)}
+                  onDelete={() => entry.id && handleDeleteEntry(entry.id)}
                 />
               ))}
+            
             </div>
           </div>
         )}
@@ -208,18 +176,60 @@ const EntryList = ({ savedEntries, editingId, editEntry, setEditEntry, handleEdi
   )
 }
 
+const EntryLikeItem = ({
+  color,
+  sign,
+  amount,
+  label,
+  subtitle,
+}: {
+  color: string
+  sign?: "+" | "-"
+  amount: number
+  label: string
+  subtitle?: string
+}) => {
+  return (
+    <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-lg border hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div
+          className="w-2 h-8 rounded-full flex-shrink-0"
+          style={{ backgroundColor: color }}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold">
+              {sign && sign}
+              {amount.toLocaleString("fr-FR")} €
+            </span>
+            <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+              {label}
+            </span>
+          </div>
+          {subtitle && (
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">
+              {subtitle}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 // Single Entry Item Component
 const EntryItem = ({ entry, isEditing, editEntry, setEditEntry, onEdit, onSave, onCancel, onDelete }: any) => {
   if (isEditing) {
     return (
-      <div className="flex gap-2 p-2 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
+      <div className="flex gap-2 p-2 bg-white dark:bg-gray-900 rounded-lg border  dark:border-slate-600">
         <select
           value={editEntry?.type || 'expense'}
           onChange={(e) => setEditEntry({ ...editEntry!, type: e.target.value as 'revenue' | 'expense' })}
-          className="border border-slate-300 dark:border-slate-600 rounded px-2 py-1 text-xs bg-white dark:bg-slate-800 text-foreground focus:outline-none focus:ring-1 focus:ring-blue-400"
+          className="border border-slate-300 dark:border-slate-600 rounded px-2 py-1 text-xs bg-white dark:bg-gray-800 text-foreground focus:outline-none focus:ring-1 focus:ring-blue-400"
         >
-          <option value="revenue">Revenu</option>
-          <option value="expense">Dépense</option>
+          <option value="revenue">+</option>
+          <option value="expense">-</option>
         </select>
         <Input
           type="number"
@@ -235,8 +245,8 @@ const EntryItem = ({ entry, isEditing, editEntry, setEditEntry, onEdit, onSave, 
           onChange={(e) => setEditEntry({ ...editEntry!, label: e.target.value })}
           className="flex-1 text-xs"
         />
-        <Button onClick={onSave} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs px-2">Sauvegarder</Button>
-        <Button onClick={onCancel} size="sm" variant="outline" className="text-xs px-2">Annuler</Button>
+        <Button onClick={onSave} size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs px-2">✔︎</Button>
+        <Button onClick={onCancel} size="sm" variant="outline" className="text-xs px-2">✘</Button>
       </div>
     )
   }
@@ -244,7 +254,7 @@ const EntryItem = ({ entry, isEditing, editEntry, setEditEntry, onEdit, onSave, 
 
 
   return (
-    <div className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 transition-colors">
+    <div className="flex items-center justify-between p-4 bg-white dark:bg-gray-900 rounded-lg border hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className={`w-2 h-8 rounded-full flex-shrink-0 ${entry.type === 'revenue' ? 'bg-green-500' : 'bg-red-500'}`} />
         <div className="min-w-0 flex-1">
@@ -489,20 +499,6 @@ export function SankeyChart({
       })
     })
 
-    // Right column: Savings node
-    const savings = 0
-    let savingsIndex = -1
-    if (savings == 0) {
-      savingsIndex = nodes.length
-      nodes.push({
-        name: "Économies",
-        color: "#404040ff",
-        monthlyAverage: savings,
-        value: savings,
-      })
-    }
-    
-
     // Create links
     // From main income to expenses aggregator
     links.push({
@@ -543,17 +539,10 @@ export function SankeyChart({
     })
 
     // From expenses aggregator to savings
-    if (savings > 0) {
-      links.push({
-        source: expenseAggregatorIndex,
-        target: savingsIndex,
-        value: savings,
-      })
-
-    }
 
     return { nodes, links }
   }
+  const savings = Math.max(0, totalIncomeAverageWithCustom - totalExpensesAverageWithCustom)
 
   const sankeyData = createSankeyData()
 
@@ -571,17 +560,6 @@ export function SankeyChart({
           isLoading={false}
         />
 
-        <EntryList
-          savedEntries={savedEntries}
-          editingId={editingId}
-          editEntry={editEntry}
-          setEditEntry={setEditEntry}
-          handleEditEntry={handleEditEntry}
-          handleSaveEdit={handleSaveEdit}
-          handleCancelEdit={handleCancelEdit}
-          handleDeleteEntry={handleDeleteEntry}
-        />
-
         <div className="h-[550px] w-full rounded-lg overflow-hidden">
           <ResponsiveContainer width="100%" height="100%">
             <Sankey
@@ -595,59 +573,106 @@ export function SankeyChart({
             >
               <Tooltip content={<CustomTooltip />} />
             </Sankey>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wide">Revenus moyens</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              +{totalIncomeAverageWithCustom.toLocaleString("fr-FR", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })} €
-            </p>
-            <p className="text-xs text-gray-500">par mois</p>
+            </ResponsiveContainer>
+            
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium uppercase tracking-wide">Dépenses moyennes</p>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-              - {totalExpensesAverageWithCustom.toLocaleString("fr-FR", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })} €
-            </p>
-            <p className="text-xs text-gray-500">par mois</p>
-          </div>
-        </div>
-
-        {Object.keys(categoryAverages).length > 0 && (
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
-            <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-3">Dépenses mensuelles par catégorie</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {categories
-                .filter((cat) => categoryAverages[cat.id] && categoryAverages[cat.id] > 0)
-                .sort((a, b) => (categoryAverages[b.id] || 0) - (categoryAverages[a.id] || 0))
-                .map((cat) => (
-                  <div key={cat.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-                    <div className="flex items-center space-x-2 flex-1 min-w-0">
-                      <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }}></div>
-                      <span className="text-xs text-gray-600 dark:text-gray-400 truncate">{cat.name}</span>
-                    </div>
-                    <div className="ml-2 flex-shrink-0 text-right">
-                      <span className="text-xs font-bold text-foreground block">
-                        {(categoryAverages[cat.id] || 0).toLocaleString("fr-FR", {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })} €
-                      </span>
-                      <span className="text-xs text-gray-500">par mois</span>
-                    </div>
-                  </div>
-                ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-200 dark:border-slate-600">
+            {/* Revenus moyens */}
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-2">
+                <TrendingUp className="h-5 w-5 text-green-500 mr-2" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Revenus moyens
+                </p>
+              </div>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                +{totalIncomeAverageWithCustom.toLocaleString("fr-FR", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })} €
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">par mois</p>
+            </div>
+              
+            {/* Dépenses moyennes */}
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-2">
+                <TrendingDown className="h-5 w-5 text-red-500 mr-2" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Dépenses moyennes
+                </p>
+              </div>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                -{totalExpensesAverageWithCustom.toLocaleString("fr-FR", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })} €
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">par mois</p>
+            </div>
+              
+            {/* Économies */}
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-2">
+                <PiggyBank className="h-5 w-5 text-blue-500 mr-2" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Économies
+                </p>
+              </div>
+              <p className={`text-2xl font-bold ${savings >= 0 ? "text-blue-600 dark:text-blue-400" : "text-orange-600 dark:text-orange-400"}`}>
+                {savings >= 0 ? "+" : ""}
+                {savings.toLocaleString("fr-FR", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })} €
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">par mois</p>
             </div>
           </div>
-        )}
+          <div className="mt-6 space-y-4 gap-3">
+          <div>
+            <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Catégories
+            </h4>
+
+            {/* Saved Transactions */}
+            {savedEntries.length > 0 && (
+              <div className="grid grid-cols-3 gap-4 py-3.5">
+                {savedEntries.map((entry: SavedEntry) => (
+                  <EntryItem
+                    key={entry.id}
+                    entry={entry}
+                    isEditing={editingId === entry.id}
+                    editEntry={editEntry}
+                    setEditEntry={setEditEntry}
+                    onEdit={() => handleEditEntry(entry)}
+                    onSave={handleSaveEdit}
+                    onCancel={handleCancelEdit}
+                    onDelete={() => entry.id && handleDeleteEntry(entry.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Category Averages */}
+            {Object.keys(categoryAverages).length > 0 && (
+              <div className="grid grid-cols-3 gap-4 pb-3.5">
+                {categories
+                  .filter(cat => categoryAverages[cat.id] && categoryAverages[cat.id] > 0)
+                  .sort((a, b) => (categoryAverages[b.id] || 0) - (categoryAverages[a.id] || 0))
+                  .map(cat => (
+                    <EntryLikeItem
+                      key={cat.id}
+                      color={cat.color}
+                      amount={Math.round(categoryAverages[cat.id])}
+                      label={cat.name}
+                      
+                    />
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   )

@@ -266,8 +266,8 @@ export default async function Dashboard() {
           <div className="flex-1">
             <CardContent className="p-0">
             <Card className="border-0 shadow-sm h-full">
-            <div className="max-h-64 overflow-y-auto">
-              <div className="space-y-0">
+            <div className="overflow-y-auto">
+              <div className="space-y-1">
                 {recentTransactions.map((transaction, index) => (
                   <div key={index} className="p-4 hover:bg-gray-800 transition-colors">
                     <div className="flex justify-between items-start mb-1">

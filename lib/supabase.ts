@@ -36,6 +36,7 @@ export interface BudgetCategory {
   user_id: string
   name: string
   budget_amount: number
+  category: string
   color: string
   created_at: string
   updated_at: string

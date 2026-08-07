@@ -10,12 +10,13 @@ import { cn } from "@/lib/utils"
 import { signOut } from "@/app/actions/auth"
 
 const navigation = [
-  { name: "Tableau de bord", href: "/", icon: Home },
+  { name: "home", href: "/", icon: Home },
   { name: "Budget", href: "/budget", icon: PiggyBank },
-  { name: "Dépenses", href: "/expenses", icon: CreditCard },
-  { name: "Objectifs", href: "/goals", icon: Target },
-  { name: "Habitudes", href: "/task", icon: Calendar },
+  { name: "Expenses", href: "/expenses", icon: CreditCard },
+  { name: "Goals", href: "/goals", icon: Target },
+  { name: "Habits", href: "/task", icon: Calendar },
   { name: "Cash-flow", href: "/cash-flow", icon: Wallet },
+  { name: "Finances", href: "/finance", icon: FileText },
   { name: "Notes", href: "/notes", icon: FileText },
 ]
 

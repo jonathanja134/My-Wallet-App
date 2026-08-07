@@ -1,13 +1,9 @@
-import BnpEasyTracker from '@/components/BnpEasyTracker'
+import BnpEasyTrackerWrapper from '@/components/BnpEasyTrackerWrapper'
 
 export const metadata = {
   title: 'BNP Easy — Finance',
 }
 
 export default function FinancePage() {
-  return (
-    <div>
-      <BnpEasyTracker />
-    </div>
-  )
+  return <BnpEasyTrackerWrapper />
 }

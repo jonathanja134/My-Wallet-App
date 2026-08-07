@@ -8,12 +8,13 @@ export function DesktopNav() {
   const pathname = usePathname()
 
   const navItems = [
-    { href: "/", label: "Tableau de bord" },
+    { href: "/", label: "Home" },
     { href: "/budget", label: "Budget" },
-    { href: "/expenses", label: "Dépenses" },
-    { href: "/goals", label: "Objectifs" },
-    { href: "/task", label: "Habitudes" },
+    { href: "/expenses", label: "Expenses" },
+    { href: "/goals", label: "Goals" },
+    { href: "/task", label: "Habits" },
     { href: "/cash-flow", label: "Cash-flow" },
+    { href: "/finance", label: "Finances" },
     { href: "/notes", label: "Notes" },
   ]
 

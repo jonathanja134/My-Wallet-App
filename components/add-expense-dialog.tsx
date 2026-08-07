@@ -41,7 +41,7 @@ export function AddExpenseDialog({ categories }: AddExpenseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="bg-black text-white hover:bg-gray-800">
+        <Button size="sm" className="bg-background text-white hover:bg-gray-800">
           <Plus className="h-4 w-4 mr-2" />
           Ajouter dépense
         </Button>

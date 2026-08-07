@@ -20,6 +20,7 @@ import { formatCurrency } from "@/lib/utils"
 import { BlurredAmount } from "@/components/BlurredAmount"
 import { createClient } from "@/lib/supabaseServer"
 import { MobileNav } from "@/components/mobile-nav"
+import { DesktopNav } from "@/components/desktop-nav"
 import { getTransactions } from "@/app/actions/expenses"
 import { getBudgetCategories } from "@/app/actions/budget"
 import dynamic from "next/dynamic"
@@ -190,33 +191,7 @@ export default async function Dashboard() {
               </div>
               <h1 className="text-xl font-semibold whitespace-nowrap px-2 text-card-foreground">My Wallet</h1>
             </div>
-            <nav className="hidden md:flex space-x-8">
-              <Link href="/" className="font-semibold flex whitespace-nowrap text-card-foreground">
-                Tableau de bord
-              </Link>
-              <Link href="/budget" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                Budget
-              </Link>
-              <Link href="/expenses" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                Dépenses
-              </Link>
-              <Link href="/goals" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                Objectifs
-              </Link>
-              <Link href="/task" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                Habitudes
-              </Link>
-              <Link href="/cash-flow" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                Cash-flow
-              </Link>
-              <Link href="/finance" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                Finance
-              </Link>
-              <Link href="/notes" className="font-semibold text-secondary-foreground hover:text-accent-foreground">
-                notes
-              </Link>
-              
-            </nav>
+            <DesktopNav />
             <Link href="/expenses">
               <Button size="sm" className="bg-background text-white hover:bg-gray-800">
                 <Plus className="h-4 w-4 mr-2" />

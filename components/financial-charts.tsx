@@ -3,12 +3,15 @@
 import { useEffect, useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChart, CalendarClock } from "lucide-react"
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from "recharts"
 import { Transaction } from "@/lib/supabase"
 import { ExpenseHistoryChartProps } from "@/lib/supabase"
 import { BudgetDonutChart } from "@/components/pie-budget-chart"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+
+// Shared tooltip styling — matches the finance tracker's popover token so every
+// recharts tooltip in the app looks the same.
+const tooltipClass =
+  "rounded-lg border border-border bg-popover px-4 py-3 text-popover-foreground shadow-lg text-xs min-w-[150px]"
 
 export function ExpenseHistoryChart({
   expenseHistory = [],
@@ -414,8 +417,8 @@ export function ExpenseHistoryChart({
           <CardContent>
             <div className="h-[300px] w-full flex items-center justify-center">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                <p className="text-gray-500">Chargement des données...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">Chargement des données…</p>
               </div>
             </div>
           </CardContent>
@@ -430,8 +433,8 @@ export function ExpenseHistoryChart({
           <CardContent>
             <div className="h-[300px] w-full flex items-center justify-center">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-                <p className="text-gray-500">Chargement des données...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">Chargement des données…</p>
               </div>
             </div>
           </CardContent>
@@ -445,144 +448,157 @@ export function ExpenseHistoryChart({
       {/* Courbe des dépenses */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
-              <CardTitle className="text-lg font-semibold flex items-center">
-                <CalendarClock className="h-5 w-5 mr-2" />
-                Sélection du mois
-              </CardTitle>
-            </CardHeader>
-          {/* Academic Year + Month Navigation */}
-          <Card className="border-0 shadow-sm bg-card ">
-            <div className="px-4 pb-3">
-              {/* Single row: Year dropdown (left) | Month scroll (middle) | Total toggle (right) */}
-              <div className="flex items-center gap-4 mb-3">
-                {/* Year Dropdown - Left */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <select
-                    value={selectedAcademicStartYear}
-                    onChange={(e) => setSelectedAcademicStartYear(parseInt(e.target.value, 10))}
-                    className="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {selectableAcademicYears.map((startYear) => {
-                      const label = `${startYear}-${(startYear + 1).toString().slice(2)}`
-                      return (
-                        <option key={startYear} value={startYear}>
-                          {label}
-                        </option>
-                      )
-                    })}
-                  </select>
-                </div>
+          <CardTitle className="text-lg font-semibold flex items-center">
+            <CalendarClock className="h-5 w-5 mr-2" />
+            Sélection du mois
+          </CardTitle>
+        </CardHeader>
 
-                {/* Month scroll - Middle (only when not in year view) */}
-                {(
-                  <div className="relative flex-1 min-w-0">
-                    <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-card to-transparent z-20" />
-                    <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-card to-transparent z-10" />
-                    <div className="flex space-x-2 overflow-x-auto scrollbar-hide px-2" ref={monthScrollRef}>
-                      {academicMonths.map((m, idx) => {
-                        const isSelected = idx === selectedAcademicMonthIndex
-                        return (
-                          <div
-                            key={m + idx}
-                            onClick={() => setSelectedAcademicMonthIndex(idx)}
-                            className={`flex items-center justify-center rounded-full px-4 py-2 cursor-pointer transition-all duration-200 flex-shrink-0 ${isSelected ? `${ !showAllYear ? "bg-background text-foreground shadow-md" : "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-500 hover:bg-background hover:text-foreground"}` : "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-500 hover:bg-background hover:text-foreground"}`}
-                            tabIndex={0}
-                          >
-                            {m.charAt(0).toUpperCase() + m.slice(1)}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
+        {/* Academic Year + Month Navigation */}
+        <div className="px-6 pb-4">
+          <div className="rounded-xl bg-muted/40 p-3">
+            <div className="flex items-center gap-4">
+              {/* Year select - Left */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <select
+                  value={selectedAcademicStartYear}
+                  onChange={(e) => setSelectedAcademicStartYear(parseInt(e.target.value, 10))}
+                  className="rounded-md border border-input bg-background px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {selectableAcademicYears.map((startYear) => {
+                    const label = `${startYear}-${(startYear + 1).toString().slice(2)}`
+                    return (
+                      <option key={startYear} value={startYear}>
+                        {label}
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
 
-                {/* Total Toggle - Right with label on top */}
-                <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                  <button
-                    className={`h-5 w-10 rounded-full border-1 transition-all flex items-center justify-center ${showAllYear ? "bg-gray-200 border-blue-500" : "bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600"}`}
-                    onClick={() => setShowAllYear((v) => !v)}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full bg-white dark:bg-slate-800 shadow-md transition-transform ${showAllYear ? "translate-x-3" : "-translate-x-3"}`}
-                    />
-                  </button>
+              {/* Month scroll - Middle */}
+              <div className="relative flex-1 min-w-0">
+                <div className="flex space-x-1 overflow-x-auto scrollbar-hide px-2" ref={monthScrollRef}>
+                  {academicMonths.map((m, idx) => {
+                    const isSelected = idx === selectedAcademicMonthIndex
+                    return (
+                      <button
+                        key={m + idx}
+                        type="button"
+                        onClick={() => setSelectedAcademicMonthIndex(idx)}
+                        className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                          isSelected && !showAllYear
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {m.charAt(0).toUpperCase() + m.slice(1)}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
+
+              {/* Month / Year toggle - Right, matches the finance tracker's pill toggle */}
+              <div className="flex gap-1 rounded-lg bg-muted p-1 flex-shrink-0">
+                {[
+                  { key: false, label: "Mois" },
+                  { key: true, label: "Année" },
+                ].map(({ key, label }) => (
+                  <button
+                    key={String(key)}
+                    type="button"
+                    onClick={() => setShowAllYear(key)}
+                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                      showAllYear === key ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </Card>
+          </div>
+        </div>
+
         <CardContent>
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-                <LineChart
+              <LineChart
                 data={expenseHistoryWithCumulative}
                 margin={{ top: 10, right: 20, bottom: -10, left: 0 }}
-                >
+              >
+                <CartesianGrid strokeDasharray="1 5" stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey={showAllYear ? "date" : "day"}
                   axisLine={false}
                   tickLine={false}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                   domain={showAllYear ? undefined : [0, 31]}
                 />
                 <YAxis
                   tickFormatter={(value) => value.toFixed(0)}
                   axisLine={false}
                   tickLine={false}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
                   domain={[
-                  0,
-                  Math.min(
-                  ...expenseHistoryWithCumulative.map((d) => d.cumulativeSpent),
-                  scaledTotalBudget
-                  ) + 10,
+                    0,
+                    Math.min(
+                      ...expenseHistoryWithCumulative.map((d) => d.cumulativeSpent),
+                      scaledTotalBudget
+                    ) + 10,
                   ]}
                 />
                 <Tooltip
                   content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null
-                  
-                  const rawDay = typeof label === "string"
-                  ? parseInt(label.split("/").pop() || "0", 10)
-                  : Number(label)
-                  
-                  if (Number.isNaN(rawDay)) return null
-                  
-                  const year = showAllYear
-                  ? payload[0]?.payload?.calYear || selectedAcademicStartYear
-                  : calendarYearSelected
-                  
-                  const month = showAllYear
-                  ? (payload[0]?.payload?.month || 1) - 1
-                  : calendarMonthSelected
-                  
-                  const date = new Date(year, month, rawDay)
-                  
-                  return (
-                  <div className="bg-background p-2 rounded shadow">
-                  <p className="font-bold flex justify-center items-center mb-2">
-                    {date.toLocaleDateString("fr-FR", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    })}
-                  </p>
-                  
-                  {payload.map((entry, index) => (
-                    <p key={index} style={{ color: entry.color }}>
-                    {entry.name} :{" "}
-                    {entry.value !== undefined
-                    ? entry.value.toLocaleString("fr-FR") + " €"
-                    : "-"}
-                    </p>
-                  ))}
-                  </div>
-                  )
+                    if (!active || !payload?.length) return null
+
+                    const rawDay = typeof label === "string"
+                      ? parseInt(label.split("/").pop() || "0", 10)
+                      : Number(label)
+
+                    if (Number.isNaN(rawDay)) return null
+
+                    const year = showAllYear
+                      ? payload[0]?.payload?.calYear || selectedAcademicStartYear
+                      : calendarYearSelected
+
+                    const month = showAllYear
+                      ? (payload[0]?.payload?.month || 1) - 1
+                      : calendarMonthSelected
+
+                    const date = new Date(year, month, rawDay)
+
+                    return (
+                      <div className={tooltipClass}>
+                        <div className="text-center text-muted-foreground mb-2">
+                          {date.toLocaleDateString("fr-FR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}
+                        </div>
+                        <div className="space-y-1">
+                          {payload.map((entry, index) => (
+                            <div key={index} className="flex items-center justify-between gap-4" style={{ color: entry.color }}>
+                              <span>{entry.name}</span>
+                              <span className="font-semibold">
+                                {entry.value !== undefined ? entry.value.toLocaleString("fr-FR") + " €" : "-"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
                   }}
+                  cursor={{ stroke: "hsl(var(--border))", strokeWidth: 1 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="cumulativeSpent"
                   name="Cumulé"
-                  stroke="#ffffffff"
-                  strokeWidth={3}
+                  stroke="hsl(var(--foreground))"
+                  strokeWidth={2.5}
                   strokeLinecap="round"
                   dot={false}
                 />
@@ -590,30 +606,51 @@ export function ExpenseHistoryChart({
                   type="monotone"
                   dataKey="possibleExpenses"
                   name="Dépenses restantes"
-                  stroke="#ff6a00ff"
-                  strokeWidth={3}
+                  stroke="#16a34a"
+                  strokeWidth={2.5}
                   strokeLinecap="round"
                   dot={false}
-                  activeDot={{ r: 4 }}
+                  activeDot={{ r: 4, fill: "#16a34a", strokeWidth: 0 }}
                 />
                 <Line
                   type="monotone"
                   dataKey="plannedExpenses"
                   strokeDasharray="5 5"
                   name="Limite planifiée"
-                  stroke="#9cb8ffba"
-                  strokeWidth={3}
+                  stroke="hsl(var(--chart-2))"
+                  strokeWidth={2}
                   strokeLinecap="round"
                   dot={false}
                   connectNulls={true}
                 />
                 <ReferenceLine
                   y={scaledTotalBudget}
-                  stroke="#ff7373ff"
+                  stroke="#dc2626"
                   strokeDasharray="5 5"
+                  strokeOpacity={0.6}
                 />
-                </LineChart>
+              </LineChart>
             </ResponsiveContainer>
+          </div>
+
+          {/* Legend — matches the finance tracker's legend row style */}
+          <div className="flex flex-wrap gap-5 mt-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 h-0.5 bg-foreground inline-block rounded-full" />
+              Cumulé
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 h-0.5 bg-green-600 inline-block rounded-full" />
+              Dépenses restantes
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 h-0.5 inline-block rounded-full" style={{ background: "hsl(var(--chart-2))" }} />
+              Limite planifiée
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-4 border-t border-dashed border-red-600/60 inline-block" />
+              Budget total
+            </span>
           </div>
         </CardContent>
       </Card>
